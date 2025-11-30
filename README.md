@@ -8,24 +8,20 @@
 ```mermaid
 graph TD
     %% Input
-    Input[("🖼️ Suspicious Image/Video")]:::inputStyle
-
-    %% Security Checkpoint
+    Input[("🖼️ Suspicious Image")]:::inputStyle
     Gate{Veritas AI Security Checkpoint}:::gateStyle
 
-    %% 7 Layers of Defense
-    subgraph Layers["🛡️ 7 Layers of Defense"]
-        L1["1. Metadata & Provenance 📄<br><i>File headers, EXIF, C2PA manifests</i>"]:::layer
-        L2["2. Biological Signals 🩺<br><i>rPPG pulse detection</i>"]:::layer
-        L3["3. Mathematical Forensics 📐<br><i>FFT, DCT, frequency artifacts</i>"]:::layer
-        L4["4. Hybrid AI Model 🤖<br><i>CNN + Transformer detecting anomalies</i>"]:::layer
-        L5["5. Physics & Lighting 💡<br><i>Lighting & eye reflection consistency</i>"]:::layer
-        L6["6. Early Signature Detection 🔬<br><i>Generative model fingerprints</i>"]:::layer
-        L7["7. Error Level Analysis 🔍<br><i>Compression & splicing X-Ray</i>"]:::layer
-    end
+    %% 7 Layers
+    L1["1. Metadata & Provenance 📄"]:::layer1
+    L2["2. Biological Signals 🩺"]:::layer2
+    L3["3. Mathematical Forensics 📐"]:::layer3
+    L4["4. Hybrid AI Model 🤖"]:::layer4
+    L5["5. Physics & Lighting 💡"]:::layer5
+    L6["6. Early Signature Detection 🔬"]:::layer6
+    L7["7. Error Level Analysis 🔍"]:::layer7
 
     %% Analysis & Verdict
-    Analysis["🧠 Synthesis Engine<br><i>Combines all clues</i>"]:::analysis
+    Analysis["🧠 Synthesis Engine"]:::analysis
     Verdict{{"✅ REAL or ❌ FAKE"}}:::verdict
 
     %% Connections
@@ -34,11 +30,17 @@ graph TD
     L1 & L2 & L3 & L4 & L5 & L6 & L7 --> Analysis --> Verdict
 
     %% Styling
-    classDef inputStyle fill:#e0f7fa,stroke:#00796b,stroke-width:2px,color:#000,font-weight:bold
-    classDef gateStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000,font-weight:bold
-    classDef layer fill:#f1f8e9,stroke:#33691e,stroke-width:1px,color:#000
-    classDef analysis fill:#e8eaf6,stroke:#3949ab,stroke-width:2px,color:#000,font-weight:bold
-    classDef verdict fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000,font-weight:bold
+    classDef inputStyle fill:#d0f0f7,stroke:#00838f,stroke-width:3px,color:#004d4d,font-weight:bold,font-family:monospace
+    classDef gateStyle fill:#fff4e1,stroke:#fb8c00,stroke-width:3px,color:#6d4c41,font-weight:bold,font-family:monospace
+    classDef layer1 fill:#fce4ec,stroke:#d81b60,stroke-width:2px,color:#880e4f,font-weight:bold,font-family:monospace
+    classDef layer2 fill:#e8f5e9,stroke:#43a047,stroke-width:2px,color:#1b5e20,font-weight:bold,font-family:monospace
+    classDef layer3 fill:#fff8e1,stroke:#fbc02d,stroke-width:2px,color:#f57f17,font-weight:bold,font-family:monospace
+    classDef layer4 fill:#e3f2fd,stroke:#1e88e5,stroke-width:2px,color:#0d47a1,font-weight:bold,font-family:monospace
+    classDef layer5 fill:#fff3e0,stroke:#fb8c00,stroke-width:2px,color:#e65100,font-weight:bold,font-family:monospace
+    classDef layer6 fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c,font-weight:bold,font-family:monospace
+    classDef layer7 fill:#e0f7fa,stroke:#00acc1,stroke-width:2px,color:#006064,font-weight:bold,font-family:monospace
+    classDef analysis fill:#c5cae9,stroke:#3949ab,stroke-width:3px,color:#1a237e,font-weight:bold,font-family:monospace
+    classDef verdict fill:#fff9c4,stroke:#fbc02d,stroke-width:3px,color:#f57f17,font-weight:bold,font-family:monospace
 
 ```
 ## 🛡️ The 7 Layers of Defense
