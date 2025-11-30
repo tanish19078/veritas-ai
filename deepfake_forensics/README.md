@@ -1,79 +1,69 @@
-# Veritas AI: Universal Multi-Layer Deepfake Forensics System
+# Veritas AI: Technical Architecture & Roadmap
+## Engineering Deep Dive
 
-![Veritas AI Logo](frontend/public/logo.svg)
+### System Architecture
+Veritas AI is a modular, multi-layer forensics pipeline built for extensibility and high-throughput analysis.
 
-**Veritas AI** is a state-of-the-art, defense-in-depth forensics platform designed to detect AI-generated media (Deepfakes). Unlike single-model detectors, Veritas AI employs a **7-layer analysis pipeline** to scrutinize media from every angle—metadata, biology, physics, and mathematics.
+*   **Frontend:** Next.js 14 (React), Tailwind CSS, Chart.js for visualization.
+*   **Backend:** FastAPI (Python), NumPy/OpenCV for image processing, PyTorch for inference.
+*   **Database:** SQLite (SQLAlchemy ORM) for analysis history and audit logs.
+*   **Deployment:** Dockerized containers, Vercel-ready frontend.
 
-## 🛡️ The 7 Layers of Defense
+### The 6-Layer Detection Pipeline (Technical Specs)
 
-1.  **Metadata & Provenance**: Analyzes file headers, EXIF data, and C2PA manifests for inconsistencies.
-2.  **Biological Signals (rPPG)**: Detects the subtle color changes in human skin caused by blood flow (pulse), often missing in deepfakes.
-3.  **Mathematical Forensics**: Uses FFT (Fast Fourier Transform) and DCT to reveal hidden frequency-domain artifacts and grid patterns.
-4.  **Hybrid AI Model**: A dual-branch neural network (CNN + Transformer) detecting texture anomalies and semantic inconsistencies.
-5.  **Physics & Lighting**: Checks for consistent lighting direction and eye reflection symmetry.
-6.  **Early Signature Detection**: Identifies fingerprints of specific generative models (GANs, Diffusion).
-7.  **Error Level Analysis (ELA)**: A visual "X-Ray" tool that highlights compression differences to detect splicing.
+#### Layer 1: Metadata & Provenance
+*   **Current Implementation:** Extracts EXIF data and file header magic numbers. Detects stripped metadata (common in AI output) and editing software signatures (Photoshop, GIMP).
+*   **Upgrade Path:** Integration of **C2PA (Coalition for Content Provenance and Authenticity)** using `c2pa-python` to verify cryptographically signed media provenance (Adobe/Microsoft standard).
 
-## 🚀 Features
+#### Layer 2: Biological Signals (rPPG)
+*   **Algorithm:** **Remote Photoplethysmography (rPPG)**.
+*   **Logic:** Extracts ROI (Region of Interest) on the face (forehead/cheeks). Analyzes subtle color variations in the Green channel over time (video frames) to estimate a blood volume pulse (BVP).
+*   **Detection:** Absence of a consistent BVP signal or irregular frequency indicates a synthetic generation.
 
-*   **Universal Dashboard**: A minimalist, "Figma-style" web interface.
-*   **Multi-Upload**: Batch process multiple images and videos simultaneously.
-*   **Real-Time Webcam Mode**: Analyze your own face live in the browser.
-*   **Detailed Visualizations**: Radar charts, spectral heatmaps, and pulse graphs.
-*   **Exportable Reports**: Download comprehensive CSV reports of your analysis.
-*   **Deployment Ready**: Configured for Vercel and Docker.
+#### Layer 3: Mathematical Forensics
+*   **Algorithms:**
+    *   **FFT (Fast Fourier Transform):** Converts image to frequency domain to spot high-frequency anomalies.
+    *   **DCT (Discrete Cosine Transform):** Analyzes JPEG compression artifacts. Double compression often indicates tampering.
+    *   **CFA (Color Filter Array) Analysis:** Checks for Bayer pattern consistency.
 
-## 🛠️ Installation
+#### Layer 4: Hybrid AI Model (Statistical & ML)
+*   **Current Implementation:**
+    *   **Laplacian Variance:** Measures image sharpness/blur. AI faces often have inconsistent focus compared to the background.
+    *   **Histogram Entropy:** Calculates pixel intensity distribution. AI images often have "flatter" or statistically distinct histograms compared to natural camera sensors.
+*   **Fallback:** Runs purely on CPU with OpenCV if PyTorch/GPU is unavailable.
 
-### Prerequisites
-*   Python 3.9+
-*   Node.js 16+
-*   Git
+#### Layer 5: Physics & Lighting
+*   **Logic:** 2D Lighting Direction Estimation.
+*   **Method:** Estimates the light source vector for the face and compares it to the background or other objects. Inconsistencies (e.g., face lit from left, background from right) trigger a high fake score.
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/yourusername/veritas-ai.git
-cd veritas-ai
-```
+#### Layer 6: Early Direct AI Signatures
+*   **Algorithm:** **Frequency Domain Artifact Detection**.
+*   **Logic:** Generative Adversarial Networks (GANs) and Diffusion models often leave "checkerboard" artifacts due to upsampling layers (Transposed Convolutions).
+*   **Detection:** We run 2D FFT and look for periodic peaks in the high-frequency spectrum that represent these grid artifacts.
 
-### 2. Backend Setup
-```bash
-cd backend
-python -m venv venv
-# Windows
-.\venv\Scripts\activate
-# Mac/Linux
-source venv/bin/activate
+#### Layer 7: Error Level Analysis (ELA)
+*   **Visualization:** Resaves the image at 95% JPEG quality and computes the difference `|Original - Resaved|`.
+*   **Output:** Generates an "X-Ray" image where manipulated regions (spliced/inpainted) appear significantly brighter due to higher error levels (loss of compression coherence).
 
-pip install -r requirements.txt
-python -m uvicorn app.main:app --reload
-```
-*Backend runs on `http://localhost:8000`*
+### API Integration Plan (Immediate Next Steps)
 
-### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-*Frontend runs on `http://localhost:3000`*
+1.  **C2PA Integration:**
+    *   **Library:** `c2pa-python`
+    *   **Action:** Verify digital signatures on incoming media. If a valid C2PA manifest exists from a trusted issuer (e.g., BBC, Sony), the "Real" confidence is boosted significantly.
 
-## 📖 Usage
+2.  **SynthID (Text only for now):**
+    *   *Note:* Google's SynthID for *images* is not yet a public API.
+    *   **Strategy:** Monitor Google Cloud Vertex AI updates for SynthID Image API release.
 
-1.  Open the dashboard at `http://localhost:3000`.
-2.  **Upload Analysis**: Drag and drop images or videos. The system will process them through all 7 layers.
-3.  **View Results**: Click on a file to see the detailed breakdown.
-    *   **Verdict**: Real vs. AI-Generated.
-    *   **Confidence**: Probability score.
-    *   **ELA**: Toggle the "Eye" icon to see the Error Level Analysis X-Ray.
-4.  **Live Webcam**: Switch to the "Live Webcam" tab to test the rPPG engine in real-time.
+3.  **Scalability:**
+    *   Move heavy ML inference (Layers 2, 4, 6) to a separate worker queue (Celery/Redis) to prevent blocking the main API thread during high load.
 
-## 🏗️ Technology Stack
-
-*   **Backend**: FastAPI, PyTorch, OpenCV, NumPy, SciPy
-*   **Frontend**: Next.js, TypeScript, Tailwind CSS, Chart.js, Lucide React
-*   **Deployment**: Docker, Vercel
-
-## 📄 License
-
-MIT License. See [LICENSE](LICENSE) for details.
+### Tech Stack Summary
+| Component | Technology |
+| :--- | :--- |
+| **Language** | Python 3.10+ |
+| **Web Framework** | FastAPI |
+| **Computer Vision** | OpenCV, Pillow |
+| **Math/Stats** | NumPy, SciPy |
+| **ML Framework** | PyTorch (Optional/CPU-fallback) |
+| **Frontend** | Next.js, TypeScript |
