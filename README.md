@@ -1,6 +1,6 @@
 # Veritas AI: Universal Multi-Layer Deepfake Forensics System
 
-![Veritas AI Logo](frontend/public/logo.svg)
+![Veritas AI Logo](https://github.com/tanish19078/veritas-ai/blob/main/deepfake_forensics/frontend/public/logo.svg)
 
 **Veritas AI** is a state-of-the-art, defense-in-depth forensics platform designed to detect AI-generated media (Deepfakes). Unlike single-model detectors, Veritas AI employs a **7-layer analysis pipeline** to scrutinize media from every angle—metadata, biology, physics, and mathematics.
 
