@@ -1,6 +1,6 @@
 <h1>
   <img src="https://github.com/tanish19078/veritas-ai/blob/main/deepfake_forensics/frontend/public/logo.svg" alt="Veritas AI Logo" width="60" style="vertical-align: middle; margin-right: 10px;">
-  Veritas AI: Universal Multi-Layer Deepfake Forensics System
+  Veritas AI: Universal Multi-Layer Deepfake Forensics 
 </h1>
 
 
