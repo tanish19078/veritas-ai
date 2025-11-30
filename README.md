@@ -4,6 +4,27 @@
 
 **Veritas AI** is a state-of-the-art, defense-in-depth forensics platform designed to detect AI-generated media (Deepfakes). Unlike single-model detectors, Veritas AI employs a **7-layer analysis pipeline** to scrutinize media from every angle—metadata, biology, physics, and mathematics.
 
+graph TD
+    Input[("🖼️ Suspicious Image/Video")] --> Gate{Veritas AI Security Checkpoint}
+    
+    subgraph "The 6 Layers of Defense"
+        G1["1. The ID Checker 🪪<br>(Checks file history & digital signature)"]
+        G2["2. The Doctor 🩺<br>(Checks for a human heartbeat/pulse)"]
+        G3["3. The Mathematician 📐<br>(Finds invisible pixel patterns)"]
+        G4["4. The Detective 🕵️<br>(AI trained to spot other AI)"]
+        G5["5. The Physicist 💡<br>(Checks if lighting & shadows make sense)"]
+        G6["6. The Specialist 🔬<br>(Looks for specific 'fingerprints' of AI tools)"]
+    end
+    
+    Gate --> G1 & G2 & G3 & G4 & G5 & G6
+    
+    G1 & G2 & G3 & G4 & G5 & G6 --> Analysis["🧠 Synthesis Engine<br>(Combines all clues)"]
+    
+    Analysis --> Verdict{{"✅ REAL or ❌ FAKE"}}
+    
+    style Input fill:#f9f,stroke:#333,stroke-width:2px
+    style Verdict fill:#bbf,stroke:#333,stroke-width:2px,color:black
+
 ## 🛡️ The 7 Layers of Defense
 
 1.  **Metadata & Provenance**: Analyzes file headers, EXIF data, and C2PA manifests for inconsistencies.
