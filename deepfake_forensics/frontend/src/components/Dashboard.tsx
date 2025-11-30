@@ -496,14 +496,14 @@ const StatusItem = ({ label, status }: { label: string, status: string }) => (
     </div>
 );
 
-const LogicItem = ({ label, score, desc }: { label: string, score: number, desc: string }) => (
+const LogicItem = ({ label, score, desc }: { label: string, score?: number, desc: string }) => (
     <li className="flex items-start justify-between group">
         <div>
             <span className="text-sm font-medium text-gray-900">{label}</span>
             <p className="text-xs text-gray-500">{desc}</p>
         </div>
-        <div className={`text-xs font-mono px-2 py-1 rounded ${score > 0.5 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-            {score.toFixed(2)}
+        <div className={`text-xs font-mono px-2 py-1 rounded ${(score || 0) > 0.5 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+            {(score || 0).toFixed(2)}
         </div>
     </li>
 );
