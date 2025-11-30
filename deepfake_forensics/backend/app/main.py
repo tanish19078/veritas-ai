@@ -2,7 +2,9 @@ from app.core.config import settings
 from app.api import endpoints
 from app.core.database import engine, Base
 from app import models
-
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 # Create tables
