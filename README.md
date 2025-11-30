@@ -12,13 +12,13 @@ graph TD
     Gate{Veritas AI Security Checkpoint}:::gateStyle
 
     %% 7 Layers
-    L1["1. Metadata & Provenance 📄"]:::layer1
-    L2["2. Biological Signals 🩺"]:::layer2
-    L3["3. Mathematical Forensics 📐"]:::layer3
-    L4["4. Hybrid AI Model 🤖"]:::layer4
-    L5["5. Physics & Lighting 💡"]:::layer5
-    L6["6. Early Signature Detection 🔬"]:::layer6
-    L7["7. Error Level Analysis 🔍"]:::layer7
+    L1["Metadata & Provenance 📄"]:::layer1
+    L2["Biological Signals 🩺"]:::layer2
+    L3["Mathematical Forensics 📐"]:::layer3
+    L4["Hybrid AI Model 🤖"]:::layer4
+    L5["Physics & Lighting 💡"]:::layer5
+    L6["Early Signature Detection 🔬"]:::layer6
+    L7["Error Level Analysis 🔍"]:::layer7
 
     %% Analysis & Verdict
     Analysis["🧠 Synthesis Engine"]:::analysis
