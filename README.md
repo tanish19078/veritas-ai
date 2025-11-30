@@ -6,26 +6,45 @@
 
 **Veritas AI** is a state-of-the-art, defense-in-depth forensics platform designed to detect AI-generated media (Deepfakes). Unlike single-model detectors, Veritas AI employs a **7-layer analysis pipeline** to scrutinize media from every angle—metadata, biology, physics, and mathematics.
 ```mermaid
-graph TD
-    Input[("🖼️ Suspicious Image/Video")] --> Gate{Veritas AI Security Checkpoint}
-    
-    subgraph "The 6 Layers of Defense"
-        G1["1. The ID Checker 🪪<br>(Checks file history & digital signature)"]
-        G2["2. The Doctor 🩺<br>(Checks for a human heartbeat/pulse)"]
-        G3["3. The Mathematician 📐<br>(Finds invisible pixel patterns)"]
-        G4["4. The Detective 🕵️<br>(AI trained to spot other AI)"]
-        G5["5. The Physicist 💡<br>(Checks if lighting & shadows make sense)"]
-        G6["6. The Specialist 🔬<br>(Looks for specific 'fingerprints' of AI tools)"]
+flowchart LR
+    %% Input
+    Input[("🖼️ Suspicious Image/Video")]:::inputStyle
+
+    %% Security Checkpoint
+    Gate{Veritas AI Security Checkpoint}:::gateStyle
+
+    %% Layers
+    subgraph Layers["🛡️ 6 Layers of Defense"]
+        style Layers fill:#f4f4f4,stroke:#999,stroke-dasharray: 5 5
+        G1["1. The ID Checker 🪪<br><i>File history & digital signature</i>"]:::layer1
+        G2["2. The Doctor 🩺<br><i>Heartbeat / rPPG detection</i>"]:::layer2
+        G3["3. The Mathematician 📐<br><i>Pixel & frequency analysis</i>"]:::layer3
+        G4["4. The Detective 🕵️<br><i>AI trained to spot AI</i>"]:::layer4
+        G5["5. The Physicist 💡<br><i>Lighting & shadow consistency</i>"]:::layer5
+        G6["6. The Specialist 🔬<br><i>AI tool fingerprints</i>"]:::layer6
     end
-    
+
+    %% Analysis & Verdict
+    Analysis["🧠 Synthesis Engine<br><i>Combines all clues</i>"]:::analysis
+    Verdict{{"✅ REAL or ❌ FAKE"}}:::verdict
+
+    %% Connections
+    Input --> Gate
     Gate --> G1 & G2 & G3 & G4 & G5 & G6
-    
-    G1 & G2 & G3 & G4 & G5 & G6 --> Analysis["🧠 Synthesis Engine<br>(Combines all clues)"]
-    
-    Analysis --> Verdict{{"✅ REAL or ❌ FAKE"}}
-    
-    style Input fill:#f9f,stroke:#333,stroke-width:2px
-    style Verdict fill:#bbf,stroke:#333,stroke-width:2px,color:black
+    G1 & G2 & G3 & G4 & G5 & G6 --> Analysis --> Verdict
+
+    %% Styling
+    classDef inputStyle fill:#9cf,stroke:#333,stroke-width:2px,color:#000,font-weight:bold
+    classDef gateStyle fill:#fc9,stroke:#333,stroke-width:2px,color:#000,font-weight:bold
+    classDef layer1 fill:#ffd1dc,stroke:#c33,stroke-width:1px
+    classDef layer2 fill:#c1f0f6,stroke:#39a,stroke-width:1px
+    classDef layer3 fill:#ffe4a3,stroke:#f90,stroke-width:1px
+    classDef layer4 fill:#d7d7ff,stroke:#33c,stroke-width:1px
+    classDef layer5 fill:#c1f6c1,stroke:#0a3,stroke-width:1px
+    classDef layer6 fill:#f0d1c1,stroke:#c63,stroke-width:1px
+    classDef analysis fill:#a0a0a0,stroke:#000,stroke-width:2px,color:white,font-weight:bold
+    classDef verdict fill:#bbf,stroke:#333,stroke-width:2px,color:black,font-weight:bold
+
 ```
 ## 🛡️ The 7 Layers of Defense
 
