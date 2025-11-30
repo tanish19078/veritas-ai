@@ -6,22 +6,22 @@
 
 **Veritas AI** is a state-of-the-art, defense-in-depth forensics platform designed to detect AI-generated media (Deepfakes). Unlike single-model detectors, Veritas AI employs a **7-layer analysis pipeline** to scrutinize media from every angle—metadata, biology, physics, and mathematics.
 ```mermaid
-flowchart LR
+graph TD
     %% Input
     Input[("🖼️ Suspicious Image/Video")]:::inputStyle
 
     %% Security Checkpoint
     Gate{Veritas AI Security Checkpoint}:::gateStyle
 
-    %% Layers
-    subgraph Layers["🛡️ 6 Layers of Defense"]
-        style Layers fill:#f4f4f4,stroke:#999,stroke-dasharray: 5 5
-        G1["1. The ID Checker 🪪<br><i>File history & digital signature</i>"]:::layer1
-        G2["2. The Doctor 🩺<br><i>Heartbeat / rPPG detection</i>"]:::layer2
-        G3["3. The Mathematician 📐<br><i>Pixel & frequency analysis</i>"]:::layer3
-        G4["4. The Detective 🕵️<br><i>AI trained to spot AI</i>"]:::layer4
-        G5["5. The Physicist 💡<br><i>Lighting & shadow consistency</i>"]:::layer5
-        G6["6. The Specialist 🔬<br><i>AI tool fingerprints</i>"]:::layer6
+    %% 7 Layers of Defense
+    subgraph Layers["🛡️ 7 Layers of Defense"]
+        L1["1. Metadata & Provenance 📄<br><i>File headers, EXIF, C2PA manifests</i>"]:::layer
+        L2["2. Biological Signals 🩺<br><i>rPPG pulse detection</i>"]:::layer
+        L3["3. Mathematical Forensics 📐<br><i>FFT, DCT, frequency artifacts</i>"]:::layer
+        L4["4. Hybrid AI Model 🤖<br><i>CNN + Transformer detecting anomalies</i>"]:::layer
+        L5["5. Physics & Lighting 💡<br><i>Lighting & eye reflection consistency</i>"]:::layer
+        L6["6. Early Signature Detection 🔬<br><i>Generative model fingerprints</i>"]:::layer
+        L7["7. Error Level Analysis 🔍<br><i>Compression & splicing X-Ray</i>"]:::layer
     end
 
     %% Analysis & Verdict
@@ -30,20 +30,15 @@ flowchart LR
 
     %% Connections
     Input --> Gate
-    Gate --> G1 & G2 & G3 & G4 & G5 & G6
-    G1 & G2 & G3 & G4 & G5 & G6 --> Analysis --> Verdict
+    Gate --> L1 & L2 & L3 & L4 & L5 & L6 & L7
+    L1 & L2 & L3 & L4 & L5 & L6 & L7 --> Analysis --> Verdict
 
     %% Styling
-    classDef inputStyle fill:#9cf,stroke:#333,stroke-width:2px,color:#000,font-weight:bold
-    classDef gateStyle fill:#fc9,stroke:#333,stroke-width:2px,color:#000,font-weight:bold
-    classDef layer1 fill:#ffd1dc,stroke:#c33,stroke-width:1px
-    classDef layer2 fill:#c1f0f6,stroke:#39a,stroke-width:1px
-    classDef layer3 fill:#ffe4a3,stroke:#f90,stroke-width:1px
-    classDef layer4 fill:#d7d7ff,stroke:#33c,stroke-width:1px
-    classDef layer5 fill:#c1f6c1,stroke:#0a3,stroke-width:1px
-    classDef layer6 fill:#f0d1c1,stroke:#c63,stroke-width:1px
-    classDef analysis fill:#a0a0a0,stroke:#000,stroke-width:2px,color:white,font-weight:bold
-    classDef verdict fill:#bbf,stroke:#333,stroke-width:2px,color:black,font-weight:bold
+    classDef inputStyle fill:#e0f7fa,stroke:#00796b,stroke-width:2px,color:#000,font-weight:bold
+    classDef gateStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000,font-weight:bold
+    classDef layer fill:#f1f8e9,stroke:#33691e,stroke-width:1px,color:#000
+    classDef analysis fill:#e8eaf6,stroke:#3949ab,stroke-width:2px,color:#000,font-weight:bold
+    classDef verdict fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#000,font-weight:bold
 
 ```
 ## 🛡️ The 7 Layers of Defense
