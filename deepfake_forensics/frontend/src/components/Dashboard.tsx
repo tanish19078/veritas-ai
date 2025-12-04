@@ -357,125 +357,148 @@ const Dashboard = () => {
                             {currentResult && (
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-                                    {/* Verdict Header */}
-                                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                                        <div>
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                        ${currentResult.verdict === 'Real' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                    {currentResult.fileName}
-                                                </span>
-                                                {currentResult.is_verified && (
-                                                    <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-700 flex items-center gap-1">
-                                                        <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                                                        Digital Signature Verified
-                                                    </span>
+                                    {/* Error State Handling */}
+                                    {currentResult.verdict === 'Error' ? (
+                                        <div className="bg-red-50 border border-red-200 rounded-3xl p-12 text-center">
+                                            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                                                <X className="w-10 h-10 text-red-500" />
+                                            </div>
+                                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Analysis Failed</h2>
+                                            <p className="text-gray-600 max-w-md mx-auto mb-8">
+                                                {currentResult.explanation || "An unexpected error occurred during the analysis of this file."}
+                                            </p>
+                                            <div className="flex justify-center gap-4">
+                                                <button
+                                                    onClick={() => removeFile(selectedResultIndex!)}
+                                                    className="px-6 py-3 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                                                >
+                                                    Remove File
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Verdict Header */}
+                                            <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                                <div>
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                                ${currentResult.verdict === 'Real' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                            {currentResult.fileName}
+                                                        </span>
+                                                        {currentResult.is_verified && (
+                                                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-100 text-blue-700 flex items-center gap-1">
+                                                                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                                                Digital Signature Verified
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <h1 className="text-4xl font-bold text-gray-900">{currentResult.verdict}</h1>
+                                                    <p className="text-gray-500 mt-2 max-w-lg">{currentResult.explanation}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className={`text-5xl font-mono font-bold tracking-tighter
+                                ${currentResult.verdict === 'Real' ? 'text-green-500' : 'text-red-500'}`}>
+                                                        {(currentResult.verdict === 'Real'
+                                                            ? (1 - currentResult.confidence) * 100
+                                                            : currentResult.confidence * 100).toFixed(1)}%
+                                                    </div>
+                                                    <div className="text-xs text-gray-400 mt-1 uppercase tracking-wider">Confidence in Verdict</div>
+                                                </div>
+                                            </div>
+
+                                            {/* ELA / Image Viewer */}
+                                            <div className="bg-black rounded-2xl overflow-hidden relative group aspect-video flex items-center justify-center">
+                                                {/* Actual Image Preview */}
+                                                {currentResult.previewUrl ? (
+                                                    <img
+                                                        src={showELA && currentResult.ela_url ? currentResult.ela_url : currentResult.previewUrl}
+                                                        alt="Analysis Subject"
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                ) : (
+                                                    <div className="text-white/50">Image Preview Unavailable</div>
+                                                )}
+
+                                                {/* ELA Overlay Label */}
+                                                {showELA && currentResult.ela_url && (
+                                                    <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 z-10">
+                                                        <p className="text-white text-xs font-mono flex items-center gap-2">
+                                                            <Activity className="w-3 h-3 text-blue-400" /> ELA Mode Active
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {currentResult.ela_url && (
+                                                    <button
+                                                        onClick={() => setShowELA(!showELA)}
+                                                        className={`absolute bottom-4 right-4 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all
+                                    ${showELA ? 'bg-white text-black' : 'bg-black/50 text-white hover:bg-black/70 backdrop-blur-md'}`}
+                                                    >
+                                                        <Eye className="w-4 h-4" /> {showELA ? 'Hide ELA' : 'Show ELA X-Ray'}
+                                                    </button>
                                                 )}
                                             </div>
-                                            <h1 className="text-4xl font-bold text-gray-900">{currentResult.verdict}</h1>
-                                            <p className="text-gray-500 mt-2 max-w-lg">{currentResult.explanation}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className={`text-5xl font-mono font-bold tracking-tighter
-                        ${currentResult.verdict === 'Real' ? 'text-green-500' : 'text-red-500'}`}>
-                                                {(currentResult.verdict === 'Real'
-                                                    ? (1 - currentResult.confidence) * 100
-                                                    : currentResult.confidence * 100).toFixed(1)}%
+
+                                            {/* Deep Dive Grid */}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                                {/* Card 1: Radar Overview */}
+                                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                                    <h3 className="font-semibold mb-6 flex items-center gap-2">
+                                                        <Activity className="w-4 h-4 text-blue-500" /> Layer Signature
+                                                    </h3>
+                                                    <div className="h-64 flex items-center justify-center">
+                                                        <LayerRadar scores={currentResult.layer_scores} />
+                                                    </div>
+                                                </div>
+
+                                                {/* Card 2: Biological Analysis */}
+                                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                                    <h3 className="font-semibold mb-6 flex items-center gap-2">
+                                                        <Zap className="w-4 h-4 text-yellow-500" /> Biological Plausibility
+                                                    </h3>
+                                                    <div className="h-40 mb-4">
+                                                        <PulseChart />
+                                                    </div>
+                                                    <div className="flex justify-between text-sm text-gray-500 border-t pt-4">
+                                                        <span>Heart Rate Var.</span>
+                                                        <span className="font-mono text-gray-900">
+                                                            {currentResult.verdict === 'Real' ? '0.12 (Normal)' : '0.02 (Low)'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Card 3: Spectral Analysis */}
+                                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                                    <h3 className="font-semibold mb-6 flex items-center gap-2">
+                                                        <Activity className="w-4 h-4 text-purple-500" /> Math Forensics (FFT)
+                                                    </h3>
+                                                    <div className="h-40">
+                                                        <SpectrumChart type="FFT" />
+                                                    </div>
+                                                </div>
+
+                                                {/* Card 4: Decision Logic */}
+                                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                                                    <div>
+                                                        <h3 className="font-semibold mb-4">Decision Logic</h3>
+                                                        <ul className="space-y-3">
+                                                            <LogicItem label="Metadata" score={currentResult.layer_scores.metadata} desc="Header/EXIF analysis" />
+                                                            <LogicItem label="Physics" score={currentResult.layer_scores.physics} desc="Lighting consistency" />
+                                                            <LogicItem label="AI Artifacts" score={currentResult.layer_scores.ai_model} desc="Hybrid Model confidence" />
+                                                        </ul>
+                                                    </div>
+                                                    <div className="mt-6 pt-4 border-t border-gray-100">
+                                                        <p className="text-xs text-gray-400">
+                                                            *Scores &gt; 0.5 indicate synthetic probability.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
                                             </div>
-                                            <div className="text-xs text-gray-400 mt-1 uppercase tracking-wider">Confidence in Verdict</div>
-                                        </div>
-                                    </div>
-
-                                    {/* ELA / Image Viewer */}
-                                    <div className="bg-black rounded-2xl overflow-hidden relative group aspect-video flex items-center justify-center">
-                                        {/* Actual Image Preview */}
-                                        {currentResult.previewUrl ? (
-                                            <img
-                                                src={showELA && currentResult.ela_url ? currentResult.ela_url : currentResult.previewUrl}
-                                                alt="Analysis Subject"
-                                                className="w-full h-full object-contain"
-                                            />
-                                        ) : (
-                                            <div className="text-white/50">Image Preview Unavailable</div>
-                                        )}
-
-                                        {/* ELA Overlay Label */}
-                                        {showELA && currentResult.ela_url && (
-                                            <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 z-10">
-                                                <p className="text-white text-xs font-mono flex items-center gap-2">
-                                                    <Activity className="w-3 h-3 text-blue-400" /> ELA Mode Active
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {currentResult.ela_url && (
-                                            <button
-                                                onClick={() => setShowELA(!showELA)}
-                                                className={`absolute bottom-4 right-4 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all
-                            ${showELA ? 'bg-white text-black' : 'bg-black/50 text-white hover:bg-black/70 backdrop-blur-md'}`}
-                                            >
-                                                <Eye className="w-4 h-4" /> {showELA ? 'Hide ELA' : 'Show ELA X-Ray'}
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Deep Dive Grid */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                                        {/* Card 1: Radar Overview */}
-                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                            <h3 className="font-semibold mb-6 flex items-center gap-2">
-                                                <Activity className="w-4 h-4 text-blue-500" /> Layer Signature
-                                            </h3>
-                                            <div className="h-64 flex items-center justify-center">
-                                                <LayerRadar scores={currentResult.layer_scores} />
-                                            </div>
-                                        </div>
-
-                                        {/* Card 2: Biological Analysis */}
-                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                            <h3 className="font-semibold mb-6 flex items-center gap-2">
-                                                <Zap className="w-4 h-4 text-yellow-500" /> Biological Plausibility
-                                            </h3>
-                                            <div className="h-40 mb-4">
-                                                <PulseChart />
-                                            </div>
-                                            <div className="flex justify-between text-sm text-gray-500 border-t pt-4">
-                                                <span>Heart Rate Var.</span>
-                                                <span className="font-mono text-gray-900">
-                                                    {currentResult.verdict === 'Real' ? '0.12 (Normal)' : '0.02 (Low)'}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Card 3: Spectral Analysis */}
-                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                                            <h3 className="font-semibold mb-6 flex items-center gap-2">
-                                                <Activity className="w-4 h-4 text-purple-500" /> Math Forensics (FFT)
-                                            </h3>
-                                            <div className="h-40">
-                                                <SpectrumChart type="FFT" />
-                                            </div>
-                                        </div>
-
-                                        {/* Card 4: Decision Logic */}
-                                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
-                                            <div>
-                                                <h3 className="font-semibold mb-4">Decision Logic</h3>
-                                                <ul className="space-y-3">
-                                                    <LogicItem label="Metadata" score={currentResult.layer_scores.metadata} desc="Header/EXIF analysis" />
-                                                    <LogicItem label="Physics" score={currentResult.layer_scores.physics} desc="Lighting consistency" />
-                                                    <LogicItem label="AI Artifacts" score={currentResult.layer_scores.ai_model} desc="Hybrid Model confidence" />
-                                                </ul>
-                                            </div>
-                                            <div className="mt-6 pt-4 border-t border-gray-100">
-                                                <p className="text-xs text-gray-400">
-                                                    *Scores &gt; 0.5 indicate synthetic probability.
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                    </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>
