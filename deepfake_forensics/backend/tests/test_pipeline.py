@@ -27,9 +27,8 @@ def test_photo_like_image_pipeline(orchestrator, photo_like_image):
     results = orchestrator.analyze_media(photo_like_image)
     _assert_result_structure(results)
 
-    # Abstaining layers must not appear in layer_scores.
+    # Biology abstains on synthetic images (no faces) and must not vote.
     assert "biology_rppg" not in results["layer_scores"]
-    assert "physics" not in results["layer_scores"]
 
     # ELA runs on still images and produces a preview file.
     assert results["ela_url"]

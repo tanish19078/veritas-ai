@@ -146,3 +146,45 @@ def test_chrom_waveform_is_normalized_and_bounded():
 
     assert 1 <= len(waveform) <= 120
     assert all(0.0 <= v <= 1.0 for v in waveform)
+
+
+def test_lighting_direction_variance_low_for_coherent_gradient():
+    from app.layers.layer5_physics import PhysicsAnalyzer
+
+    x = np.linspace(0, 255, 256, dtype=np.float32)
+    gradient = np.tile(x, (256, 1)).astype(np.uint8)
+
+    variance = PhysicsAnalyzer._quadrant_direction_variance(gradient)
+
+    assert variance < 0.2
+
+
+def test_lighting_direction_variance_high_for_conflicting_gradients():
+    from app.layers.layer5_physics import PhysicsAnalyzer
+
+    x = np.linspace(0, 255, 128, dtype=np.float32)
+    left = np.tile(x, (128, 1))
+    right = np.tile(x[::-1], (128, 1))
+    conflicting = np.concatenate([left, right], axis=1).astype(np.uint8)
+
+    variance = PhysicsAnalyzer._quadrant_direction_variance(conflicting)
+
+    assert variance > 0.5
+
+
+def test_glint_error_symmetry_math():
+    from app.layers.layer5_physics import PhysicsAnalyzer
+
+    assert PhysicsAnalyzer._glint_position_error((0.3, 0.4), (0.7, 0.4)) < 0.05
+    assert PhysicsAnalyzer._glint_position_error((0.3, 0.4), (0.4, 0.4)) > 0.15
+    assert PhysicsAnalyzer._glint_position_error((0.3, 0.4), (0.7, 0.9)) > 0.15
+
+
+def test_physics_layer_runs_and_reports_details(photo_like_image):
+    from app.layers.layer5_physics import PhysicsAnalyzer
+
+    results = PhysicsAnalyzer().analyze(photo_like_image)
+
+    assert "lighting" in results["details"]
+    assert "eye_glint" in results["details"]
+    assert results["score"] is None or 0.0 <= results["score"] <= 1.0
