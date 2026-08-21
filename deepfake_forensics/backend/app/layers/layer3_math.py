@@ -13,13 +13,14 @@ class MathAnalyzer:
 
     def analyze(self, image_path: str) -> Dict[str, Any]:
         results = {
-            "score": 0.0,
+            "score": None,
             "details": {},
             "anomalies": []
         }
         
         img = cv2.imread(image_path)
         if img is None:
+            results["details"]["note"] = "Image could not be decoded; layer abstains"
             return results
             
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

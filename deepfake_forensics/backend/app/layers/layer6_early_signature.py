@@ -11,7 +11,7 @@ class EarlySignatureAnalyzer:
     
     def analyze(self, image_path: str) -> Dict[str, Any]:
         results = {
-            "score": 0.0,
+            "score": None,
             "details": {},
             "anomalies": []
         }
@@ -20,6 +20,7 @@ class EarlySignatureAnalyzer:
             # Load image in grayscale
             img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
             if img is None:
+                results["details"]["note"] = "Image could not be decoded; layer abstains"
                 return results
 
             # Resize for consistent analysis if too large

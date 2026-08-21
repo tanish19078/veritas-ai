@@ -16,7 +16,7 @@ class ELAAnalyzer:
 
     def analyze(self, image_path: str, output_dir: str) -> Dict[str, Any]:
         results = {
-            "score": 0.0,
+            "score": None,
             "details": {},
             "ela_image_path": None,
             "anomalies": []

@@ -65,7 +65,8 @@ class ForensicsOrchestrator:
             # Layers 3-6 operate on an image. Videos use the first decoded frame.
             if image_path and os.path.exists(image_path):
                 l3_res = self.layer3.analyze(image_path)
-                l4_score = float(self.layer4.analyze(image_path))
+                l4_raw = self.layer4.analyze(image_path)
+                l4_score = float(l4_raw) if l4_raw is not None else None
                 l5_res = self.layer5.analyze(image_path)
                 l6_res = self.layer6.analyze(image_path)
             else:

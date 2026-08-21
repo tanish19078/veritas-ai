@@ -14,23 +14,23 @@ class AIModelAnalyzer:
     def __init__(self):
         self.last_details = {}
 
-    def analyze_from_path(self, image_path: str) -> float:
+    def analyze_from_path(self, image_path: str):
         img = cv2.imread(image_path)
         if img is None:
             self.last_details = {"error": "Image could not be decoded"}
-            return 0.5
+            return None
 
         return self._score_image(img)
 
-    def analyze(self, image_input) -> float:
+    def analyze(self, image_input):
         if isinstance(image_input, str):
-            return self.analyze_from_path(image_input)
+            return self.analyze_from_path(image_path=image_input)
 
         if isinstance(image_input, np.ndarray):
             return self._score_image(image_input)
 
         self.last_details = {"error": "Unsupported input type"}
-        return 0.5
+        return None
 
     def get_last_details(self):
         return self.last_details
