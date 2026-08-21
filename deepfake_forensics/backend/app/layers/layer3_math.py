@@ -25,19 +25,22 @@ class MathAnalyzer:
             
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
+        # Accumulate evidence separately so an abstaining layer stays None.
+        score = 0.0
+
         # 3A. FFT Analysis
         fft_score = float(self._analyze_fft(gray))
         results["details"]["fft_score"] = fft_score
         if fft_score > 0.7:
             results["anomalies"].append("Strong periodic artifacts in FFT (Grid patterns)")
-            results["score"] += 0.4
+            score += 0.4
 
         # 3B. DCT Analysis
         dct_score = float(self._analyze_dct(gray))
         results["details"]["dct_score"] = dct_score
         if dct_score > 0.6:
              results["anomalies"].append("Abnormal DCT coefficient distribution")
-             results["score"] += 0.3
+             score += 0.3
 
         # 3C. CFA Analysis (Bayer Pattern)
         # AI images usually lack a Bayer pattern trace because they are generated directly as RGB
@@ -45,10 +48,10 @@ class MathAnalyzer:
         results["details"]["cfa_absence_score"] = cfa_score
         if cfa_score > 0.8:
             results["anomalies"].append("Missing CFA/Bayer pattern traces (Direct RGB generation)")
-            results["score"] += 0.5
+            score += 0.5
 
         # Normalize total score
-        results["score"] = min(results["score"], 0.99)
+        results["score"] = min(score, 0.99)
         
         return results
 
