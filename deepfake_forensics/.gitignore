@@ -42,6 +42,5 @@ Thumbs.db
 # Project Specific
 backend/uploads/
 uploads/
+*.db
 *.sqlite3
-start_app.bat
-DEPLOYMENT.md
