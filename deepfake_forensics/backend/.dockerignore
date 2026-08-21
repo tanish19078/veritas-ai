@@ -1,0 +1,11 @@
+.venv
+venv
+__pycache__
+*.pyc
+uploads
+forensics.db
+*.db
+tests
+.pytest_cache
+Dockerfile
+.dockerignore

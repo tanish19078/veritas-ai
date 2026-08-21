@@ -6,8 +6,10 @@ services:
     container_name: veritas-backend
     ports:
       - "8000:8000"
+    environment:
+      # Base requirements ship no torch; force the lightweight detector.
+      - LAYER4_MODE=heuristic
     volumes:
-      - ./backend/forensics.db:/app/forensics.db
       - ./backend/uploads:/app/uploads
     restart: always
 
