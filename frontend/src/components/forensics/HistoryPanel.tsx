@@ -23,9 +23,7 @@ const HistoryPanel = ({ open, records, onClose }: HistoryPanelProps) => (
             }`}
         >
             <div className="flex items-center justify-between border-b border-white/[0.06] p-5">
-                <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-300">
-                    Recent Scans
-                </h2>
+                <h2 className="micro-label !text-slate-300">Recent Scans</h2>
                 <button
                     onClick={onClose}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-white/[0.06] hover:text-slate-200"

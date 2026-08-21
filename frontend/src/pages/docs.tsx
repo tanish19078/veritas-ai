@@ -51,8 +51,12 @@ const LAYERS = [
 ];
 
 const Docs = () => (
-    <div className="min-h-screen">
-        <div className="bg-lab" />
+        <div className="min-h-screen">
+            <div className="bg-lab">
+                <div className="lab-grid" />
+                <div className="lab-glow-cyan" />
+                <div className="lab-glow-violet" />
+            </div>
         <nav className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/70 backdrop-blur-xl">
             <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-6">
                 <Link
@@ -70,6 +74,7 @@ const Docs = () => (
 
         <main className="mx-auto max-w-4xl px-6 py-14">
             <header className="animate-fade-up mb-12">
+                <p className="micro-label mb-3">System documentation</p>
                 <h1 className="text-4xl font-bold tracking-tight text-slate-100">
                     How Veritas<span className="text-brand">·AI</span> works
                 </h1>

@@ -72,9 +72,7 @@ const RadarProfile = ({ result }: { result: AnalysisResult }) => {
 
     return (
         <section className="panel animate-fade-up p-5">
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-widest text-slate-400">
-                Layer Profile
-            </h3>
+            <h3 className="micro-label !text-slate-400 mb-2">Layer Profile</h3>
             <div className="mx-auto max-w-sm">
                 <Radar data={data} options={options as never} />
             </div>

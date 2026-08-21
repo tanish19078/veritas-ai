@@ -23,7 +23,7 @@ const PulseWave = ({ result }: { result: AnalysisResult }) => {
     return (
         <section className="panel animate-fade-up p-5">
             <div className="mb-3 flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-slate-400">
+                <h3 className="micro-label !text-slate-400 flex items-center gap-2">
                     <Activity className="h-4 w-4" /> Pulse Waveform
                 </h3>
                 {band && (
