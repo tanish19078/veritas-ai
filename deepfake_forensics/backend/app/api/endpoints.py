@@ -12,6 +12,10 @@ router = APIRouter()
 orchestrator = ForensicsOrchestrator()
 
 UPLOAD_DIR = "uploads"
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
+VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv", ".webm"}
+SUPPORTED_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
+
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
@@ -23,10 +27,19 @@ async def analyze_media(
     """
     Upload an image or video for deepfake analysis.
     """
+    original_filename = file.filename or "upload"
+
     # Generate unique filename
-    file_ext = os.path.splitext(file.filename)[1]
+    file_ext = os.path.splitext(original_filename)[1].lower()
+    if file_ext not in SUPPORTED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{file_ext or 'unknown'}'. Upload an image or video file."
+        )
+
     filename = f"{uuid.uuid4()}{file_ext}"
     file_path = os.path.join(UPLOAD_DIR, filename)
+    media_type = "video" if file_ext in VIDEO_EXTENSIONS else "image"
     
     try:
         with open(file_path, "wb") as buffer:
@@ -34,11 +47,14 @@ async def analyze_media(
             
         # Run analysis
         results = orchestrator.analyze_media(file_path)
+        results["file_name"] = original_filename
+        results["stored_file"] = filename
+        results["media_type"] = media_type
         
         # Save to DB
         db_log = AnalysisLog(
-            filename=file.filename,
-            media_type="video" if file_ext.lower() in ['.mp4', '.avi', '.mov'] else "image",
+            filename=original_filename,
+            media_type=media_type,
             verdict=results["verdict"],
             confidence=results["confidence"],
             layer_scores=results["layer_scores"]
