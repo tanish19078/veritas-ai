@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FileVideo, ImageIcon, Loader2, ScanSearch, X } from 'lucide-react';
+import { FileVideo, Loader2, ScanSearch, X } from 'lucide-react';
 
 interface StagedFile {
     file: File;
@@ -41,7 +41,18 @@ const UploadZone = ({ loading, progress, onAnalyze }: UploadZoneProps) => {
     };
 
     return (
-        <section className="animate-fade-up">
+        <section className="panel animate-fade-up relative overflow-hidden p-5">
+            {loading && <div className="scan-sweep" />}
+
+            <div className="mb-4 flex items-center justify-between">
+                <h3 className="micro-label !text-slate-400">Evidence Intake</h3>
+                {staged.length > 0 && (
+                    <span className="font-mono text-[11px] text-slate-500">
+                        {staged.length} staged
+                    </span>
+                )}
+            </div>
+
             <div
                 onClick={() => inputRef.current?.click()}
                 onDragOver={(e) => {
@@ -54,27 +65,27 @@ const UploadZone = ({ loading, progress, onAnalyze }: UploadZoneProps) => {
                     setDragging(false);
                     addFiles(e.dataTransfer.files);
                 }}
-                className={`panel panel-hover flex cursor-pointer flex-col items-center justify-center gap-4 px-8 py-14 text-center transition-all ${
+                className={`relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center transition-all ${
                     dragging
-                        ? 'border-cyan-400/60 shadow-glow ring-1 ring-cyan-400/40'
-                        : 'border-dashed'
+                        ? 'border-cyan-400/70 bg-cyan-400/[0.05] shadow-glow'
+                        : 'border-white/[0.12] hover:border-white/25 hover:bg-white/[0.02]'
                 }`}
             >
                 <span
-                    className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-brand transition-transform duration-300 ${
+                    className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-brand shadow-glow transition-transform duration-300 ${
                         dragging ? 'scale-110' : ''
                     }`}
                 >
-                    <ScanSearch className="h-8 w-8 text-ink-950" strokeWidth={2.2} />
+                    <ScanSearch className="h-7 w-7 text-ink-950" strokeWidth={2.2} />
                 </span>
-                <div>
-                    <p className="text-lg font-medium text-slate-100">
-                        Drop images or videos to scan
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500">
-                        JPG · PNG · WEBP · MP4 · MOV · WEBM — batch uploads supported
-                    </p>
-                </div>
+                <p className="text-sm font-medium text-slate-200">
+                    Drop evidence here
+                </p>
+                <p className="text-[11px] leading-relaxed text-slate-500">
+                    JPG · PNG · WEBP · MP4 · MOV · WEBM
+                    <br />
+                    batch uploads supported
+                </p>
                 <input
                     ref={inputRef}
                     type="file"
@@ -89,61 +100,64 @@ const UploadZone = ({ loading, progress, onAnalyze }: UploadZoneProps) => {
             </div>
 
             {staged.length > 0 && (
-                <div className="mt-4 flex flex-wrap items-center gap-2">
+                <ul className="mt-4 max-h-44 space-y-1.5 overflow-y-auto pr-1">
                     {staged.map((item, i) => (
-                        <span
+                        <li
                             key={`${item.file.name}-${i}`}
-                            className="group flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] py-1 pl-1 pr-3 text-xs text-slate-300"
+                            className="group flex items-center gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.03] p-1.5 pr-2.5 text-xs text-slate-300"
                         >
                             {item.preview ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                     src={item.preview}
                                     alt=""
-                                    className="h-6 w-6 rounded-full object-cover"
+                                    className="h-7 w-7 rounded-md object-cover"
                                 />
                             ) : (
-                                <FileVideo className="ml-1.5 h-4 w-4 text-indigo-300" />
+                                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-400/10">
+                                    <FileVideo className="h-3.5 w-3.5 text-indigo-300" />
+                                </span>
                             )}
-                            <span className="max-w-[160px] truncate">{item.file.name}</span>
+                            <span className="min-w-0 flex-1 truncate">{item.file.name}</span>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     removeAt(i);
                                 }}
-                                className="text-slate-500 transition-colors hover:text-rose-400"
+                                className="text-slate-600 transition-colors hover:text-rose-400"
                             >
                                 <X className="h-3.5 w-3.5" />
                             </button>
-                        </span>
+                        </li>
                     ))}
-                </div>
+                </ul>
             )}
 
-            <div className="mt-5 flex items-center gap-4">
-                <button
-                    onClick={runScan}
-                    disabled={staged.length === 0 || loading}
-                    className="flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-ink-950 shadow-glow transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
-                >
-                    {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <ScanSearch className="h-4 w-4" />
-                    )}
-                    {loading
-                        ? progress && progress.total > 1
-                            ? `Scanning ${progress.done + 1}/${progress.total}…`
-                            : 'Scanning…'
-                        : 'Run Forensic Scan'}
-                </button>
-                {staged.length > 0 && !loading && (
-                    <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                        <ImageIcon className="h-3.5 w-3.5" />
-                        {staged.length} file{staged.length > 1 ? 's' : ''} staged
-                    </span>
+            <button
+                onClick={runScan}
+                disabled={staged.length === 0 || loading}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 text-sm font-semibold text-ink-950 shadow-glow transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
+            >
+                {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                    <ScanSearch className="h-4 w-4" />
                 )}
-            </div>
+                {loading
+                    ? progress && progress.total > 1
+                        ? `Scanning ${progress.done + 1}/${progress.total}…`
+                        : 'Scanning…'
+                    : 'Run Forensic Scan'}
+            </button>
+
+            {loading && progress && (
+                <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                        className="h-full rounded-full bg-brand transition-all duration-500"
+                        style={{ width: `${(progress.done / progress.total) * 100}%` }}
+                    />
+                </div>
+            )}
         </section>
     );
 };
