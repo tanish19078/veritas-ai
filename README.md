@@ -64,13 +64,30 @@ The dashboard runs at `http://localhost:3000`.
 
 ## Detection Layers
 
-1. Metadata and provenance: EXIF count, MIME type, editing signatures, optional C2PA.
-2. Biological signals: face detection and rPPG-style temporal variance for videos.
-3. Mathematical forensics: FFT, DCT block artifacts, and RGB residual consistency.
-4. AI artifact heuristic: blur, entropy, and color-channel statistics.
-5. Physics and lighting: global lighting-gradient consistency.
-6. Early AI signatures: high-frequency periodic FFT peaks.
+1. Metadata and provenance: EXIF count, MIME type, editing signatures, real C2PA verification via `c2pa-python`.
+2. Biological signals: CHROM rPPG with cardiac-band FFT (0.7-4 Hz), BPM estimate, and pulse waveform for videos.
+3. Mathematical forensics: FFT, DCT block artifacts, and RGB residual consistency (configurable thresholds).
+4. AI artifact detection: optional pretrained Hugging Face detector (`LAYER4_MODE=auto|pretrained|heuristic`) with a deterministic blur/entropy/color heuristic fallback.
+5. Physics and lighting: quadrant lighting-gradient consistency plus eye-glint symmetry inside detected faces.
+6. Early AI signatures: high-frequency periodic FFT peaks (calibration knobs configurable).
 7. ELA: compression-difference visualization and weak supporting score.
+
+Layers that cannot judge the media (e.g., no face in a video) abstain instead of voting "Real"; the orchestrator re-normalizes weights over active layers only.
+
+## Configuration
+
+Backend environment variables:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `LAYER4_MODE` | `auto` | `pretrained`, `heuristic`, or `auto` (pretrained when available). Docker defaults to heuristic-only. |
+| `LAYER4_MODEL_NAME` | `umm-maybe/AI-image-detector` | Any Hugging Face image-classification model. |
+| `L3_FFT_THRESHOLD` / `L3_DCT_THRESHOLD` / `L3_CFA_THRESHOLD` | `0.7` / `0.6` / `0.8` | Layer 3 anomaly thresholds. |
+| `L6_HIGH_FREQ_DIVISOR` / `L6_PEAK_DIVISOR` / `L6_ANOMALY_THRESHOLD` | `200` / `100` / `0.6` | Layer 6 sensitivity knobs. |
+
+Frontend: set `NEXT_PUBLIC_API_URL` in `.env.local` (see `.env.example`).
+
+Optional heavy extras live in `backend/requirements-optional.txt` (`torch`, `transformers`, `c2pa-python`).
 
 ## Docker
 
@@ -84,8 +101,16 @@ Backend: `http://localhost:8000`
 
 ## Roadmap
 
-- Replace heuristic Layer 4 with a trained detector and calibration set.
-- Add a real rPPG implementation with heart-rate band validation.
+- Calibrate Layer 3/6 thresholds against labeled datasets (GenImage, FaceForensics++).
 - Move long-running inference to a worker queue.
 - Replace SQLite with Postgres for persistent cloud deployments.
-- Add automated API tests with sample media fixtures.
+- Real-time webcam rPPG mode in the dashboard.
+
+## Tests
+
+```powershell
+cd deepfake_forensics\backend
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt pytest httpx
+python -m pytest tests -v
+```
