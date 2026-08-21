@@ -230,3 +230,72 @@ def test_layer6_score_never_negative(photo_like_image, tmp_path):
         result = analyzer.analyze(path)
         assert result["score"] is not None
         assert 0.0 <= result["score"] <= 1.0
+
+
+def test_layer1_detects_editing_software_signature(tmp_path):
+    from PIL import Image
+
+    path = tmp_path / "photoshopped.jpg"
+    image = Image.new("RGB", (48, 48), (90, 90, 200))
+    exif = Image.Exif()
+    exif[0x0131] = "Adobe Photoshop 24.0 (Windows)"
+    image.save(path, exif=exif)
+
+    results = MetadataAnalyzer().analyze(str(path))
+
+    assert any("Photoshop" in anomaly for anomaly in results["anomalies"])
+
+
+def test_layer1_c2pa_verified_resets_verdict(tmp_path, monkeypatch):
+    import sys
+    import types
+    from PIL import Image
+
+    path = tmp_path / "signed.jpg"
+    Image.new("RGB", (32, 32)).save(path)
+
+    class FakeReader:
+        def get_active_manifest(self):
+            return {"claim_generator": "trusted-signer", "title": "unit-test"}
+
+        def is_valid(self):
+            return True
+
+        def get_validation_state(self):
+            return "valid"
+
+    fake_c2pa = types.ModuleType("c2pa")
+    fake_c2pa.Reader = lambda file_path: FakeReader()
+    monkeypatch.setitem(sys.modules, "c2pa", fake_c2pa)
+
+    results = MetadataAnalyzer().analyze(str(path))
+
+    assert results["details"]["provenance_verified"] is True
+    assert results["details"]["c2pa"]["verified"] is True
+    assert results["details"]["c2pa"]["issuer"] == "trusted-signer"
+    assert results["anomalies"] == []
+    assert results["score"] == 0.0
+
+
+def test_layer4_accepts_ndarray_input():
+    analyzer = AIModelAnalyzer()
+    analyzer.mode = "heuristic"
+    img = np.full((64, 64, 3), 127, dtype=np.uint8)
+
+    score = analyzer.analyze(img)
+
+    assert 0.0 <= score <= 1.0
+    assert analyzer.get_last_details()["method"] == "blur_entropy_color_heuristic"
+
+
+def test_layer4_unsupported_input_abstains():
+    analyzer = AIModelAnalyzer()
+
+    assert analyzer.analyze(12345) is None
+    assert "error" in analyzer.get_last_details()
+
+
+def test_layer4_missing_file_abstains():
+    analyzer = AIModelAnalyzer()
+
+    assert analyzer.analyze("Z:/definitely/missing.png") is None

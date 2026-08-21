@@ -51,3 +51,30 @@ def test_history_returns_typed_records(client):
     assert isinstance(records, list)
     for record in records:
         assert set(record) >= {"id", "filename", "verdict", "confidence"}
+
+
+def test_analyze_video_endpoint(client, faceless_video):
+    with open(faceless_video, "rb") as video_file:
+        response = client.post(
+            "/api/v1/analyze",
+            files={"file": ("clip.mp4", video_file, "video/mp4")},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["media_type"] == "video"
+    # ELA is image-only and must stay disabled for videos.
+    assert data["ela_url"] is None
+
+
+def test_history_pagination_and_limit(client):
+    first_page = client.get("/api/v1/history?limit=1&skip=0")
+    second_page = client.get("/api/v1/history?limit=1&skip=1")
+
+    assert first_page.status_code == second_page.status_code == 200
+    assert len(first_page.json()) <= 1
+
+    all_records = client.get("/api/v1/history?limit=50").json()
+    if len(all_records) >= 2:
+        assert first_page.json()[0]["id"] == all_records[0]["id"]
+        assert second_page.json()[0]["id"] == all_records[1]["id"]

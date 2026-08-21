@@ -166,7 +166,9 @@ class ForensicsOrchestrator:
                 final_score = max(final_score, float(score))
                 dominant_signals.append(layer)
 
-        sufficient_evidence = total_weight >= MIN_ACTIVE_WEIGHT
+        sufficient_evidence = (
+            total_weight >= MIN_ACTIVE_WEIGHT or bool(dominant_signals)
+        )
         return final_score, dominant_signals, sufficient_evidence
 
     def _explain(self, results: Dict[str, Any], dominant_signals, sufficient_evidence: bool = True):
