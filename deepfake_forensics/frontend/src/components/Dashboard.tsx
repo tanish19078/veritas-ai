@@ -5,6 +5,7 @@ import {
     RadialLinearScale,
     PointElement,
     LineElement,
+    BarElement,
     Filler,
     Tooltip,
     Legend,
@@ -12,11 +13,13 @@ import {
     LinearScale,
 } from 'chart.js';
 import { Radar, Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 
 ChartJS.register(
     RadialLinearScale,
     PointElement,
     LineElement,
+    BarElement,
     Filler,
     Tooltip,
     Legend,
@@ -24,21 +27,39 @@ ChartJS.register(
     LinearScale
 );
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+const score = (value?: number) => typeof value === 'number' && Number.isFinite(value) ? value : 0;
+
+const percent = (value?: number) => `${(score(value) * 100).toFixed(1)}%`;
+
+const csvEscape = (value: any) => {
+    const text = value === undefined || value === null ? '' : String(value);
+    return `"${text.replace(/"/g, '""')}"`;
+};
+
+const formatTimestamp = (timestamp?: string) => {
+    if (!timestamp) return '';
+    const parsed = new Date(timestamp);
+    return Number.isNaN(parsed.getTime()) ? timestamp : parsed.toLocaleString();
+};
+
 // --- Sub-components ---
 
 const LayerRadar = ({ scores }: { scores: any }) => {
     const data = {
-        labels: ['Metadata', 'Biology', 'Math', 'AI Model', 'Physics', 'Signature'],
+        labels: ['Metadata', 'Biology', 'Math', 'AI Model', 'Physics', 'Signature', 'ELA'],
         datasets: [
             {
                 label: 'Fake Probability',
                 data: [
-                    scores.metadata || 0,
-                    scores.biology_rppg || 0,
-                    scores.math_forensics || 0,
-                    scores.ai_model || 0,
-                    scores.physics || 0,
-                    scores.early_signature || 0,
+                    score(scores.metadata),
+                    score(scores.biology_rppg),
+                    score(scores.math_forensics),
+                    score(scores.ai_model),
+                    score(scores.physics),
+                    score(scores.early_signature),
+                    score(scores.ela),
                 ],
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 borderColor: 'rgba(255, 99, 132, 1)',
@@ -49,13 +70,14 @@ const LayerRadar = ({ scores }: { scores: any }) => {
     return <Radar data={data} options={{ scales: { r: { min: 0, max: 1 } } }} />;
 };
 
-const PulseChart = () => {
-    // Dummy data for visualization
+const PulseChart = ({ biology }: { biology?: any }) => {
+    const signalStd = biology?.details?.signal_std_dev;
+    const amplitude = typeof signalStd === 'number' ? Math.min(signalStd / 12, 0.35) : 0;
     const data = {
         labels: Array.from({ length: 20 }, (_, i) => i),
         datasets: [{
             label: 'Pulse Signal',
-            data: Array.from({ length: 20 }, () => 0.5 + Math.random() * 0.2),
+            data: Array.from({ length: 20 }, (_, i) => 0.5 + Math.sin(i * 0.7) * amplitude),
             borderColor: 'rgb(255, 205, 86)',
             tension: 0.4
         }]
@@ -63,19 +85,23 @@ const PulseChart = () => {
     return <Line data={data} options={{ plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }} />;
 };
 
-const SpectrumChart = ({ type }: { type: string }) => {
+const SpectrumChart = ({ details, scores }: { details?: any, scores: any }) => {
     const data = {
-        labels: Array.from({ length: 20 }, (_, i) => i),
+        labels: ['FFT', 'DCT', 'CFA', 'Signature', 'ELA'],
         datasets: [{
-            label: type,
-            data: Array.from({ length: 20 }, () => Math.random()),
+            label: 'Layer Score',
+            data: [
+                score(details?.math?.details?.fft_score),
+                score(details?.math?.details?.dct_score),
+                score(details?.math?.details?.cfa_absence_score),
+                score(scores.early_signature),
+                score(scores.ela),
+            ],
             borderColor: 'rgb(153, 102, 255)',
             backgroundColor: 'rgba(153, 102, 255, 0.5)',
-            fill: true,
-            tension: 0.4
         }]
     };
-    return <Line data={data} options={{ plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }} />;
+    return <Bar data={data} options={{ plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 1 } } }} />;
 };
 
 
@@ -94,13 +120,13 @@ const Dashboard = () => {
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch('http://localhost:8000/api/v1/history');
+            const res = await fetch(`${API_BASE_URL}/api/v1/history`);
             if (res.ok) {
                 const data = await res.json();
                 setHistory(data);
             }
         } catch (error) {
-            console.error("Failed to fetch history:", error);
+            setHistory([]);
         }
     };
 
@@ -139,34 +165,38 @@ const Dashboard = () => {
                 const formData = new FormData();
                 formData.append('file', files[i]);
 
-                const res = await fetch('http://localhost:8000/api/v1/analyze', {
+                const res = await fetch(`${API_BASE_URL}/api/v1/analyze`, {
                     method: 'POST',
                     body: formData
                 });
 
-                if (!res.ok) throw new Error("Analysis failed");
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({ detail: "Analysis failed" }));
+                    throw new Error(errorData.detail || "Analysis failed");
+                }
 
                 const data = await res.json();
 
                 // Add preview URL from the file object
+                data.fileName = data.file_name || files[i].name;
                 data.previewUrl = (files[i] as any).preview;
 
                 // Fix ELA URL if present
                 if (data.ela_url) {
                     const filename = data.ela_url.split(/[/\\]/).pop();
-                    data.ela_url = `http://localhost:8000/uploads/${filename}`;
+                    data.ela_url = `${API_BASE_URL}/uploads/${filename}`;
                 }
 
                 newResults.push(data);
-            } catch (error) {
-                console.error(error);
+            } catch (error: any) {
+                console.warn("Analysis request failed:", error);
                 // Push error state
                 newResults.push({
                     fileName: files[i].name,
                     verdict: "Error",
                     confidence: 0,
                     layer_scores: {},
-                    explanation: "Analysis failed. Please try again.",
+                    explanation: error.message || "Analysis failed. Please try again.",
                     previewUrl: (files[i] as any).preview
                 });
             }
@@ -182,23 +212,24 @@ const Dashboard = () => {
         if (results.length === 0) return;
 
         // Generate CSV
-        const headers = ["File Name", "Verdict", "Confidence", "Metadata Score", "Biology Score", "Math Score", "AI Model Score", "Physics Score", "Signature Score", "Explanation"];
+        const headers = ["File Name", "Verdict", "Confidence", "Metadata Score", "Biology Score", "Math Score", "AI Model Score", "Physics Score", "Signature Score", "ELA Score", "Explanation"];
         const rows = results.map(r => [
-            r.fileName,
+            r.fileName || r.file_name,
             r.verdict,
-            (r.confidence * 100).toFixed(1) + "%",
-            r.layer_scores.metadata,
-            r.layer_scores.biology_rppg,
-            r.layer_scores.math_forensics,
-            r.layer_scores.ai_model,
-            r.layer_scores.physics,
-            r.layer_scores.early_signature,
-            `"${r.explanation}"`
+            percent(r.confidence),
+            score(r.layer_scores.metadata).toFixed(3),
+            score(r.layer_scores.biology_rppg).toFixed(3),
+            score(r.layer_scores.math_forensics).toFixed(3),
+            score(r.layer_scores.ai_model).toFixed(3),
+            score(r.layer_scores.physics).toFixed(3),
+            score(r.layer_scores.early_signature).toFixed(3),
+            score(r.layer_scores.ela).toFixed(3),
+            r.explanation
         ]);
 
         const csvContent = "data:text/csv;charset=utf-8,"
-            + headers.join(",") + "\n"
-            + rows.map(e => e.join(",")).join("\n");
+            + headers.map(csvEscape).join(",") + "\n"
+            + rows.map(e => e.map(csvEscape).join(",")).join("\n");
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -233,7 +264,7 @@ const Dashboard = () => {
                                 </div>
                                 <div className="flex justify-between text-xs text-gray-400">
                                     <span>{(log.confidence * 100).toFixed(0)}% Conf.</span>
-                                    <span>{log.timestamp.split(' ')[1]}</span>
+                                    <span>{formatTimestamp(log.timestamp)}</span>
                                 </div>
                             </div>
                         ))}
@@ -335,12 +366,12 @@ const Dashboard = () => {
                                     <Cpu className="w-4 h-4" /> Active Modules
                                 </h3>
                                 <div className="space-y-3">
-                                    <StatusItem label="Metadata Engine" status="Ready" />
-                                    <StatusItem label="Bio-Signal (rPPG)" status="Ready" />
-                                    <StatusItem label="Spectral (FFT/DCT)" status="Ready" />
-                                    <StatusItem label="Physics Check" status="Ready" />
-                                    <StatusItem label="Hybrid AI Model" status="Ready" />
-                                    <StatusItem label="ELA (X-Ray)" status="Ready" />
+                                    <StatusItem label="Metadata Engine" status="Active" />
+                                    <StatusItem label="Bio-Signal (rPPG)" status="Heuristic" />
+                                    <StatusItem label="Spectral (FFT/DCT)" status="Active" />
+                                    <StatusItem label="Physics Check" status="Heuristic" />
+                                    <StatusItem label="AI Artifact Model" status="Heuristic" />
+                                    <StatusItem label="ELA (X-Ray)" status="Visual" />
                                 </div>
                             </div>
                         </div>
@@ -459,12 +490,12 @@ const Dashboard = () => {
                                                         <Zap className="w-4 h-4 text-yellow-500" /> Biological Plausibility
                                                     </h3>
                                                     <div className="h-40 mb-4">
-                                                        <PulseChart />
+                                                        <PulseChart biology={currentResult.details?.biology} />
                                                     </div>
                                                     <div className="flex justify-between text-sm text-gray-500 border-t pt-4">
-                                                        <span>Heart Rate Var.</span>
+                                                        <span>Signal Std. Dev.</span>
                                                         <span className="font-mono text-gray-900">
-                                                            {currentResult.verdict === 'Real' ? '0.12 (Normal)' : '0.02 (Low)'}
+                                                            {currentResult.details?.biology?.details?.signal_std_dev?.toFixed?.(3) || 'N/A'}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -475,7 +506,7 @@ const Dashboard = () => {
                                                         <Activity className="w-4 h-4 text-purple-500" /> Math Forensics (FFT)
                                                     </h3>
                                                     <div className="h-40">
-                                                        <SpectrumChart type="FFT" />
+                                                        <SpectrumChart details={currentResult.details} scores={currentResult.layer_scores} />
                                                     </div>
                                                 </div>
 
@@ -487,6 +518,7 @@ const Dashboard = () => {
                                                             <LogicItem label="Metadata" score={currentResult.layer_scores.metadata} desc="Header/EXIF analysis" />
                                                             <LogicItem label="Physics" score={currentResult.layer_scores.physics} desc="Lighting consistency" />
                                                             <LogicItem label="AI Artifacts" score={currentResult.layer_scores.ai_model} desc="Hybrid Model confidence" />
+                                                            <LogicItem label="ELA" score={currentResult.layer_scores.ela} desc="Compression consistency" />
                                                         </ul>
                                                     </div>
                                                     <div className="mt-6 pt-4 border-t border-gray-100">
@@ -513,7 +545,7 @@ const StatusItem = ({ label, status }: { label: string, status: string }) => (
     <div className="flex items-center justify-between text-sm">
         <span className="text-gray-600">{label}</span>
         <span className="flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${status === 'Ready' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+            <div className={`w-1.5 h-1.5 rounded-full ${status === 'Active' ? 'bg-green-500' : status === 'Visual' ? 'bg-blue-500' : 'bg-yellow-500'}`} />
             <span className="text-gray-900 font-medium">{status}</span>
         </span>
     </div>
