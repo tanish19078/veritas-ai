@@ -10,7 +10,11 @@ class BiologicalAnalyzer:
     - Pulse waveform reconstruction
     - "Flatline" detector for AI faces
     """
-    
+
+    PULSE_BAND_LOW_HZ = 0.7   # ~42 BPM
+    PULSE_BAND_HIGH_HZ = 4.0  # ~240 BPM
+    PULSE_SNR_THRESHOLD = 0.30
+
     def __init__(self):
         # Load face cascade classifier
         # In a real deployment, use a better detector like MTCNN or RetinaFace
@@ -90,28 +94,14 @@ class BiologicalAnalyzer:
         # FFT pulse-band check: a living face shows a periodic skin-color
         # component in the 0.7-4.0 Hz band (~42-240 BPM). Detrend the signal,
         # apply a Hann window, and measure the dominant peak inside the band.
-        detrended = green_signals - np.mean(green_signals)
-        n = len(detrended)
-        spectrum = np.abs(np.fft.rfft(detrended * np.hanning(n)))
-        freqs = np.fft.rfftfreq(n, d=1.0 / fps)
+        peak_hz, pulse_snr = self._pulse_band_metrics(green_signals, fps)
 
-        band = (freqs >= 0.7) & (freqs <= 4.0)
-        pulse_peak_hz = None
-        pulse_snr = None
-        band_energy = float(np.sum(spectrum[band]))
-        if band.any() and band_energy > 1e-9:
-            band_spectrum = spectrum[band]
-            peak_idx = int(np.argmax(band_spectrum))
-            pulse_peak_hz = float(freqs[band][peak_idx])
-            # Fraction of cardiac-band energy concentrated at the peak.
-            pulse_snr = float(band_spectrum[peak_idx] / (band_energy + 1e-9))
-
-        has_pulse = pulse_snr is not None and pulse_snr >= 0.30
+        has_pulse = pulse_snr is not None and pulse_snr >= self.PULSE_SNR_THRESHOLD
 
         results["details"]["pulse_band"] = {
-            "peak_hz": pulse_peak_hz,
+            "peak_hz": peak_hz,
             "snr": pulse_snr,
-            "estimated_bpm": round(pulse_peak_hz * 60.0, 1) if pulse_peak_hz is not None else None,
+            "estimated_bpm": round(peak_hz * 60.0, 1) if peak_hz is not None else None,
             "detected": bool(has_pulse),
         }
 
@@ -127,6 +117,32 @@ class BiologicalAnalyzer:
             # Could be lighting changes, not necessarily fake, but suspicious
 
         return results
+
+    @classmethod
+    def _pulse_band_metrics(cls, signal: np.ndarray, fps: float):
+        """
+        Returns (peak_hz, snr) of the dominant frequency inside the
+        cardiac band, or (None, None) when no band energy exists.
+        snr is the fraction of band energy concentrated at the peak.
+        """
+        detrended = signal - np.mean(signal)
+        n = len(detrended)
+        spectrum = np.abs(np.fft.rfft(detrended * np.hanning(n)))
+        freqs = np.fft.rfftfreq(n, d=1.0 / fps)
+
+        band = (freqs >= cls.PULSE_BAND_LOW_HZ) & (freqs <= cls.PULSE_BAND_HIGH_HZ)
+        if not band.any():
+            return None, None
+
+        band_energy = float(np.sum(spectrum[band]))
+        if band_energy <= 1e-9:
+            return None, None
+
+        band_spectrum = spectrum[band]
+        peak_idx = int(np.argmax(band_spectrum))
+        peak_hz = float(freqs[band][peak_idx])
+        snr = float(band_spectrum[peak_idx] / (band_energy + 1e-9))
+        return peak_hz, snr
 
     def analyze_image(self, image_path: str) -> Dict[str, Any]:
         """
