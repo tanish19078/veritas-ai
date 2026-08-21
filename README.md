@@ -15,18 +15,17 @@ The project is designed as a strong portfolio/demo project, not as courtroom-gra
 ## Project Structure
 
 ```text
-deepfake_forensics/
-  backend/
-    app/
-      api/endpoints.py
-      core/orchestrator.py
-      layers/
-    requirements.txt
-  frontend/
-    src/components/Dashboard.tsx
-    src/pages/
-    .env.example
-  docker-compose.yml
+backend/
+  app/
+    api/endpoints.py
+    core/orchestrator.py
+    layers/
+  requirements.txt
+frontend/
+  src/components/Dashboard.tsx
+  src/pages/
+  .env.example
+docker-compose.yml
 ```
 
 ## Quick Start
@@ -34,7 +33,7 @@ deepfake_forensics/
 ### Backend
 
 ```powershell
-cd deepfake_forensics\backend
+cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -48,7 +47,7 @@ Use a standard python.org or Conda Python distribution for local installs. MSYS 
 ### Frontend
 
 ```powershell
-cd deepfake_forensics\frontend
+cd frontend
 npm install
 Copy-Item .env.example .env.local
 npm run dev
@@ -92,7 +91,6 @@ Optional heavy extras live in `backend/requirements-optional.txt` (`torch`, `tra
 ## Docker
 
 ```powershell
-cd deepfake_forensics
 docker compose up --build
 ```
 
@@ -109,7 +107,7 @@ Backend: `http://localhost:8000`
 ## Tests
 
 ```powershell
-cd deepfake_forensics\backend
+cd backend
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt pytest httpx
 python -m pytest tests -v
