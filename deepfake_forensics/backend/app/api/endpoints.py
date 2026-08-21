@@ -7,6 +7,7 @@ from app.core.orchestrator import ForensicsOrchestrator
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import AnalysisLog
+from app.schemas import AnalysisLogResponse
 
 router = APIRouter()
 orchestrator = ForensicsOrchestrator()
@@ -20,12 +21,15 @@ if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
 @router.post("/analyze", response_model=Any)
-async def analyze_media(
+def analyze_media(
     file: UploadFile = File(...), 
     db: Session = Depends(get_db)
 ):
     """
     Upload an image or video for deepfake analysis.
+
+    Deliberately a sync endpoint: FastAPI runs it in a threadpool so the
+    CPU-heavy forensic pipeline does not block the event loop.
     """
     original_filename = file.filename or "upload"
 
@@ -70,7 +74,7 @@ async def analyze_media(
             os.remove(file_path)
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/history", response_model=List[Any])
+@router.get("/history", response_model=List[AnalysisLogResponse])
 def get_history(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     logs = db.query(AnalysisLog).order_by(AnalysisLog.timestamp.desc()).offset(skip).limit(limit).all()
     return logs
