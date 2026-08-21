@@ -87,15 +87,44 @@ class BiologicalAnalyzer:
         # Real videos have micro-fluctuations due to blood flow
         results["details"]["signal_std_dev"] = float(std_dev)
 
-        if std_dev < 0.5: # Threshold would need tuning
-            results["anomalies"].append("Unnaturally stable skin tone (Flatline)")
+        # FFT pulse-band check: a living face shows a periodic skin-color
+        # component in the 0.7-4.0 Hz band (~42-240 BPM). Detrend the signal,
+        # apply a Hann window, and measure the dominant peak inside the band.
+        detrended = green_signals - np.mean(green_signals)
+        n = len(detrended)
+        spectrum = np.abs(np.fft.rfft(detrended * np.hanning(n)))
+        freqs = np.fft.rfftfreq(n, d=1.0 / fps)
+
+        band = (freqs >= 0.7) & (freqs <= 4.0)
+        pulse_peak_hz = None
+        pulse_snr = None
+        band_energy = float(np.sum(spectrum[band]))
+        if band.any() and band_energy > 1e-9:
+            band_spectrum = spectrum[band]
+            peak_idx = int(np.argmax(band_spectrum))
+            pulse_peak_hz = float(freqs[band][peak_idx])
+            # Fraction of cardiac-band energy concentrated at the peak.
+            pulse_snr = float(band_spectrum[peak_idx] / (band_energy + 1e-9))
+
+        has_pulse = pulse_snr is not None and pulse_snr >= 0.30
+
+        results["details"]["pulse_band"] = {
+            "peak_hz": pulse_peak_hz,
+            "snr": pulse_snr,
+            "estimated_bpm": round(pulse_peak_hz * 60.0, 1) if pulse_peak_hz is not None else None,
+            "detected": bool(has_pulse),
+        }
+
+        if has_pulse:
+            # Cardiac-band activity is weak evidence of a living subject.
+            results["score"] = 0.1
+        elif std_dev < 0.5:
+            # Flat, non-periodic skin signal: the classic deepfake tell.
+            results["anomalies"].append("Unnaturally stable skin tone with no cardiac-band pulse (Flatline)")
             results["score"] = 0.8
         elif std_dev > 10.0:
             results["anomalies"].append("Excessive noise in skin tone")
             # Could be lighting changes, not necessarily fake, but suspicious
-
-        # FFT of the signal to find heart rate peak
-        # (Skipping full implementation for brevity, but this is where 1.0-1.6Hz check goes)
 
         return results
 
