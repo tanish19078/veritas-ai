@@ -45,7 +45,7 @@ class BiologicalAnalyzer:
         max_frames = 300
         frames_to_read = min(frame_count, max_frames) if frame_count > 0 else max_frames
 
-        green_signals = []
+        bgr_signals = []
         face_frames = 0
         frames_read = 0
 
@@ -64,10 +64,8 @@ class BiologicalAnalyzer:
                 # ROI: Forehead or cheeks are best, let's take center of face
                 roi = frame[y:y+h, x:x+w]
 
-                # Extract Green channel average
-                # Green channel contains strongest PPG signal
-                g_mean = np.mean(roi[:, :, 1])
-                green_signals.append(g_mean)
+                # Per-frame mean of each channel inside the face ROI.
+                bgr_signals.append(np.mean(roi.reshape(-1, 3), axis=0))
                 face_frames += 1
             # Frames without a face carry no biological signal and are skipped
             # entirely instead of being recorded as zeros.
@@ -77,33 +75,32 @@ class BiologicalAnalyzer:
         results["details"]["frames_read"] = frames_read
         results["details"]["face_frames"] = face_frames
 
-        # Analyze the signal
-        green_signals = np.array(green_signals, dtype=np.float64)
-
-        if len(green_signals) < 30:
+        if len(bgr_signals) < 30:
             results["details"]["note"] = "Insufficient face frames for rPPG; layer abstains"
             return results
 
-        # Calculate variance/std dev
-        std_dev = np.std(green_signals)
+        means = np.array(bgr_signals, dtype=np.float64)  # shape (n, 3), BGR order
 
-        # AI generated videos often have very low temporal variance in skin tone (flatline)
-        # Real videos have micro-fluctuations due to blood flow
-        results["details"]["signal_std_dev"] = float(std_dev)
+        # Temporal variance of the green channel: AI generated videos often
+        # have very low skin-tone variance (flatline).
+        std_dev = float(np.std(means[:, 1]))
+        results["details"]["signal_std_dev"] = std_dev
 
-        # FFT pulse-band check: a living face shows a periodic skin-color
-        # component in the 0.7-4.0 Hz band (~42-240 BPM). Detrend the signal,
-        # apply a Hann window, and measure the dominant peak inside the band.
-        peak_hz, pulse_snr = self._pulse_band_metrics(green_signals, fps)
+        # CHROM-based rPPG: project chrominance signals (invariant to motion
+        # and lighting) onto the cardiac band and measure the dominant peak.
+        pulse_signal = self._chrom_pulse_signal(means, fps)
+        peak_hz, pulse_snr = self._pulse_band_metrics(pulse_signal, fps)
 
         has_pulse = pulse_snr is not None and pulse_snr >= self.PULSE_SNR_THRESHOLD
 
         results["details"]["pulse_band"] = {
+            "method": "chrom",
             "peak_hz": peak_hz,
             "snr": pulse_snr,
             "estimated_bpm": round(peak_hz * 60.0, 1) if peak_hz is not None else None,
             "detected": bool(has_pulse),
         }
+        results["details"]["waveform"] = self._downsample_waveform(pulse_signal)
 
         if has_pulse:
             # Cardiac-band activity is weak evidence of a living subject.
@@ -143,6 +140,56 @@ class BiologicalAnalyzer:
         peak_hz = float(freqs[band][peak_idx])
         snr = float(band_spectrum[peak_idx] / (band_energy + 1e-9))
         return peak_hz, snr
+
+    @staticmethod
+    def _bandpass(signal: np.ndarray, fps: float) -> np.ndarray:
+        """Zeroes out spectrum outside the cardiac band (0.7-4.0 Hz)."""
+        spectrum = np.fft.rfft(signal - np.mean(signal))
+        freqs = np.fft.rfftfreq(len(signal), d=1.0 / fps)
+        keep = (freqs >= BiologicalAnalyzer.PULSE_BAND_LOW_HZ) & (
+            freqs <= BiologicalAnalyzer.PULSE_BAND_HIGH_HZ
+        )
+        spectrum[~keep] = 0
+        return np.fft.irfft(spectrum, n=len(signal))
+
+    @classmethod
+    def _chrom_pulse_signal(cls, bgr_means: np.ndarray, fps: float) -> np.ndarray:
+        """
+        CHROM method (de Haan & Jeanne): builds chrominance signals X/Y that
+        are robust to motion and lighting, then combines them with
+        alpha = std(X)/std(Y) and bandpasses to the cardiac band.
+        """
+        # Input rows are BGR; reorder to R, G, B.
+        rgb = np.stack(
+            [bgr_means[:, 2], bgr_means[:, 1], bgr_means[:, 0]], axis=1
+        ).astype(np.float64)
+
+        norms = np.mean(rgb, axis=0)
+        norms[norms < 1e-6] = 1e-6
+        normalized = rgb / norms  # per-channel temporal normalization
+
+        x_s = 3.0 * normalized[:, 0] - 2.0 * normalized[:, 1]
+        y_s = 1.5 * normalized[:, 0] + normalized[:, 1] - 1.5 * normalized[:, 2]
+
+        std_y = float(np.std(y_s))
+        alpha = float(np.std(x_s)) / std_y if std_y > 1e-9 else 1.0
+
+        return cls._bandpass(x_s - alpha * y_s, fps)
+
+    @staticmethod
+    def _downsample_waveform(signal: np.ndarray, max_points: int = 120):
+        """Normalizes the pulse signal to [0, 1] for frontend plotting."""
+        arr = np.asarray(signal, dtype=np.float64)
+        if arr.size == 0:
+            return []
+        if arr.size > max_points:
+            idx = np.linspace(0, arr.size - 1, max_points).astype(int)
+            arr = arr[idx]
+        span = float(np.max(arr) - np.min(arr))
+        if span <= 1e-9:
+            return [0.5] * int(arr.size)
+        arr = (arr - np.min(arr)) / span
+        return [round(float(v), 4) for v in arr]
 
     def analyze_image(self, image_path: str) -> Dict[str, Any]:
         """

@@ -112,3 +112,37 @@ def test_layer4_forced_heuristic_mode(photo_like_image):
 
     assert 0.0 <= score <= 1.0
     assert analyzer.get_last_details()["method"] == "blur_entropy_color_heuristic"
+
+
+def _synthetic_bgr_means(fps=30.0, seconds=10.0, pulse_hz=1.2):
+    """Face-ROI channel means with a cardiac-band modulation on all channels."""
+    t = np.arange(int(fps * seconds)) / fps
+    pulse = 0.8 * np.sin(2 * np.pi * pulse_hz * t)
+    drift = 0.01 * t
+    b = 100.0 + pulse * 0.6 + drift
+    g = 110.0 + pulse + drift
+    r = 120.0 + pulse * 0.7 + drift
+    return np.stack([b, g, r], axis=1)
+
+
+def test_chrom_signal_recovers_cardiac_pulse():
+    fps = 30.0
+    means = _synthetic_bgr_means(pulse_hz=1.2)
+
+    signal = BiologicalAnalyzer._chrom_pulse_signal(means, fps)
+    peak_hz, snr = BiologicalAnalyzer._pulse_band_metrics(signal, fps)
+
+    assert peak_hz is not None
+    assert abs(peak_hz - 1.2) < 0.15
+    assert snr >= BiologicalAnalyzer.PULSE_SNR_THRESHOLD
+
+
+def test_chrom_waveform_is_normalized_and_bounded():
+    means = _synthetic_bgr_means()
+
+    waveform = BiologicalAnalyzer._downsample_waveform(
+        BiologicalAnalyzer._chrom_pulse_signal(means, 30.0)
+    )
+
+    assert 1 <= len(waveform) <= 120
+    assert all(0.0 <= v <= 1.0 for v in waveform)
