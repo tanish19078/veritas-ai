@@ -3,17 +3,96 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 15, 23, 42;
-  --background-end-rgb: 15, 23, 42;
+    color-scheme: dark;
+}
+
+html,
+body {
+    background-color: #04060c;
+    color: #e2e8f0;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient background glows */
+.bg-lab {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bg-lab::before,
+.bg-lab::after {
+    content: '';
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(120px);
+    opacity: 0.16;
+}
+
+.bg-lab::before {
+    width: 560px;
+    height: 560px;
+    top: -180px;
+    left: -120px;
+    background: radial-gradient(circle, #22d3ee, transparent 70%);
+}
+
+.bg-lab::after {
+    width: 640px;
+    height: 640px;
+    bottom: -240px;
+    right: -160px;
+    background: radial-gradient(circle, #8b5cf6, transparent 70%);
+}
+
+/* Frosted panel */
+.panel {
+    @apply rounded-2xl border border-white/[0.07] bg-white/[0.03] shadow-panel backdrop-blur-xl;
+}
+
+.panel-hover {
+    @apply transition-colors duration-200 hover:border-white/[0.14] hover:bg-white/[0.05];
+}
+
+/* Gradient text */
+.text-brand {
+    @apply bg-gradient-to-r from-cyan-300 via-indigo-300 to-fuchsia-300 bg-clip-text text-transparent;
+}
+
+/* Thin custom scrollbars */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Skeleton shimmer for loading states */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.04) 25%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.04) 75%
+    );
+    background-size: 800px 100%;
+    animation: shimmer 1.8s linear infinite;
 }
