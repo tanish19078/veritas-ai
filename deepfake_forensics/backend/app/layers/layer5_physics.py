@@ -13,7 +13,9 @@ class PhysicsAnalyzer:
 
     def analyze(self, image_path: str) -> Dict[str, Any]:
         results = {
-            "score": 0.0,
+            # No reliable physics scoring yet; abstain (None) rather than
+            # voting 0.0 ("Real") and diluting the aggregate.
+            "score": None,
             "details": {},
             "anomalies": []
         }

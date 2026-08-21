@@ -62,7 +62,11 @@ class MetadataAnalyzer:
         if c2pa_result.get("verified"):
             # Strong signal for authenticity (if signed by trusted issuer)
             results["score"] = 0.0 # Reset score to 0 (Real)
+            # Verified provenance invalidates the earlier metadata heuristics,
+            # so the stale anomaly flags must not leak into the explanation.
+            results["anomalies"] = []
             results["details"]["provenance_verified"] = True
+            results["details"]["note"] = "C2PA manifest verified; metadata heuristics overridden"
         else:
             results["details"]["provenance_verified"] = False
 
