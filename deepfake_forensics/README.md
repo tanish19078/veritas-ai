@@ -1,69 +1,83 @@
-# Veritas AI: Technical Architecture & Roadmap
-## Engineering Deep Dive
+# Veritas AI Technical Notes
 
-### System Architecture
-Veritas AI is a modular, multi-layer forensics pipeline built for extensibility and high-throughput analysis.
+Veritas AI is a modular deepfake-forensics application. The backend is a FastAPI service that runs media through independent analysis layers, and the frontend is a Next.js dashboard for upload, review, visualization, and export.
 
-*   **Frontend:** Next.js 14 (React), Tailwind CSS, Chart.js for visualization.
-*   **Backend:** FastAPI (Python), NumPy/OpenCV for image processing, PyTorch for inference.
-*   **Database:** SQLite (SQLAlchemy ORM) for analysis history and audit logs.
-*   **Deployment:** Dockerized containers, Vercel-ready frontend.
+## Architecture
 
-### The 6-Layer Detection Pipeline (Technical Specs)
+```text
+Browser Dashboard
+  -> POST /api/v1/analyze
+  -> FastAPI upload handler
+  -> ForensicsOrchestrator
+  -> Layer analyzers
+  -> SQLite history log
+  -> JSON response + ELA image URL
+```
 
-#### Layer 1: Metadata & Provenance
-*   **Current Implementation:** Extracts EXIF data and file header magic numbers. Detects stripped metadata (common in AI output) and editing software signatures (Photoshop, GIMP).
-*   **Upgrade Path:** Integration of **C2PA (Coalition for Content Provenance and Authenticity)** using `c2pa-python` to verify cryptographically signed media provenance (Adobe/Microsoft standard).
+## Backend
 
-#### Layer 2: Biological Signals (rPPG)
-*   **Algorithm:** **Remote Photoplethysmography (rPPG)**.
-*   **Logic:** Extracts ROI (Region of Interest) on the face (forehead/cheeks). Analyzes subtle color variations in the Green channel over time (video frames) to estimate a blood volume pulse (BVP).
-*   **Detection:** Absence of a consistent BVP signal or irregular frequency indicates a synthetic generation.
+- `app/main.py`: FastAPI app, CORS, static upload serving, API router.
+- `app/api/endpoints.py`: upload validation, file storage, analysis endpoint, history endpoint.
+- `app/core/orchestrator.py`: coordinates layers, aggregates weighted scores, builds verdicts and explanations.
+- `app/core/database.py`: SQLite connection and SQLAlchemy session management.
+- `app/models.py`: analysis history table.
 
-#### Layer 3: Mathematical Forensics
-*   **Algorithms:**
-    *   **FFT (Fast Fourier Transform):** Converts image to frequency domain to spot high-frequency anomalies.
-    *   **DCT (Discrete Cosine Transform):** Analyzes JPEG compression artifacts. Double compression often indicates tampering.
-    *   **CFA (Color Filter Array) Analysis:** Checks for Bayer pattern consistency.
+## Frontend
 
-#### Layer 4: Hybrid AI Model (Statistical & ML)
-*   **Current Implementation:**
-    *   **Laplacian Variance:** Measures image sharpness/blur. AI faces often have inconsistent focus compared to the background.
-    *   **Histogram Entropy:** Calculates pixel intensity distribution. AI images often have "flatter" or statistically distinct histograms compared to natural camera sensors.
-*   **Fallback:** Runs purely on CPU with OpenCV if PyTorch/GPU is unavailable.
+- `src/components/Dashboard.tsx`: upload workflow, history panel, results, charts, ELA toggle, CSV export.
+- `src/pages/index.tsx`: dashboard route.
+- `src/pages/docs.tsx`: explanatory documentation page.
 
-#### Layer 5: Physics & Lighting
-*   **Logic:** 2D Lighting Direction Estimation.
-*   **Method:** Estimates the light source vector for the face and compares it to the background or other objects. Inconsistencies (e.g., face lit from left, background from right) trigger a high fake score.
+The frontend reads `NEXT_PUBLIC_API_URL`; copy `.env.example` to `.env.local` for local development.
 
-#### Layer 6: Early Direct AI Signatures
-*   **Algorithm:** **Frequency Domain Artifact Detection**.
-*   **Logic:** Generative Adversarial Networks (GANs) and Diffusion models often leave "checkerboard" artifacts due to upsampling layers (Transposed Convolutions).
-*   **Detection:** We run 2D FFT and look for periodic peaks in the high-frequency spectrum that represent these grid artifacts.
+## Layer Summary
 
-#### Layer 7: Error Level Analysis (ELA)
-*   **Visualization:** Resaves the image at 95% JPEG quality and computes the difference `|Original - Resaved|`.
-*   **Output:** Generates an "X-Ray" image where manipulated regions (spliced/inpainted) appear significantly brighter due to higher error levels (loss of compression coherence).
+| Layer | Implementation | Notes |
+| --- | --- | --- |
+| Metadata | MIME, EXIF count, editing signatures, optional C2PA | Good weak signal, not decisive alone |
+| Biology | Haar face detection and green-channel variance | Works best for videos with visible faces |
+| Math | FFT, DCT blockiness, RGB residual consistency | Heuristic, useful for artifact inspection |
+| AI artifacts | Blur, entropy, color-channel statistics | Lightweight replacement until a trained model is added |
+| Physics | Lighting-gradient consistency | Weak signal, scene-dependent |
+| Signature | FFT peak detection | Looks for periodic high-frequency artifacts |
+| ELA | JPEG resave difference image | Best used visually, not as a primary score |
 
-### API Integration Plan (Immediate Next Steps)
+## Local Development
 
-1.  **C2PA Integration:**
-    *   **Library:** `c2pa-python`
-    *   **Action:** Verify digital signatures on incoming media. If a valid C2PA manifest exists from a trusted issuer (e.g., BBC, Sony), the "Real" confidence is boosted significantly.
+Backend:
 
-2.  **SynthID (Text only for now):**
-    *   *Note:* Google's SynthID for *images* is not yet a public API.
-    *   **Strategy:** Monitor Google Cloud Vertex AI updates for SynthID Image API release.
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
+```
 
-3.  **Scalability:**
-    *   Move heavy ML inference (Layers 2, 4, 6) to a separate worker queue (Celery/Redis) to prevent blocking the main API thread during high load.
+Use python.org or Conda Python for local installs. If your shell points at MSYS Python, prefer Docker because scientific packages may build from source.
 
-### Tech Stack Summary
-| Component | Technology |
-| :--- | :--- |
-| **Language** | Python 3.10+ |
-| **Web Framework** | FastAPI |
-| **Computer Vision** | OpenCV, Pillow |
-| **Math/Stats** | NumPy, SciPy |
-| **ML Framework** | PyTorch (Optional/CPU-fallback) |
-| **Frontend** | Next.js, TypeScript |
+Frontend:
+
+```powershell
+cd frontend
+npm install
+Copy-Item .env.example .env.local
+npm run dev
+```
+
+## Optional C2PA
+
+For signed-media provenance checks:
+
+```powershell
+cd backend
+pip install -r requirements-optional.txt
+```
+
+If `c2pa-python` is unavailable, the metadata layer still runs and reports that C2PA verification is disabled.
+
+## Production Notes
+
+- SQLite is fine for local demos, but use Postgres for cloud persistence.
+- Uploaded media and generated ELA images are stored in `backend/uploads`.
+- The current detection logic is explainable and deterministic, but it is not a substitute for trained, calibrated forensic models.
