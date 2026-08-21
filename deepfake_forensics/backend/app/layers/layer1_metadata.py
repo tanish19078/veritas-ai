@@ -1,8 +1,13 @@
 import os
-import json
+import mimetypes
 import exifread
-import magic
 from typing import Dict, Any
+
+try:
+    import magic
+    HAS_MAGIC = True
+except ImportError:
+    HAS_MAGIC = False
 
 class MetadataAnalyzer:
     """
@@ -25,7 +30,7 @@ class MetadataAnalyzer:
             return results
 
         # 1. File Header Analysis (Magic numbers)
-        mime_type = magic.from_file(file_path, mime=True)
+        mime_type = self._get_mime_type(file_path)
         results["details"]["mime_type"] = mime_type
         
         # 2. EXIF Analysis
@@ -75,6 +80,16 @@ class MetadataAnalyzer:
         except Exception as e:
             return {}
 
+    def _get_mime_type(self, file_path: str) -> str:
+        if HAS_MAGIC:
+            try:
+                return magic.from_file(file_path, mime=True)
+            except Exception:
+                pass
+
+        mime_type, _ = mimetypes.guess_type(file_path)
+        return mime_type or "application/octet-stream"
+
     def _check_c2pa(self, file_path: str) -> Dict[str, Any]:
         """
         Verifies C2PA Content Credentials.
@@ -82,25 +97,29 @@ class MetadataAnalyzer:
         """
         try:
             # Attempt to read C2PA manifest
-            # Note: c2pa-python API might vary, using standard pattern
             import c2pa
-            
-            # Create a reader
+
             try:
-                manifest = c2pa.read_file(file_path)
+                # Create a reader and parse the file
+                reader = c2pa.Reader.from_file(file_path)
+                manifest = reader.active_manifest
+
                 if manifest:
                     return {
                         "verified": True,
-                        "issuer": manifest.active_manifest.claim_generator,
-                        "title": manifest.active_manifest.title,
-                        "signature_date": manifest.active_manifest.creation_time
+                        "issuer": manifest.claim_generator,
+                        "title": manifest.title,
+                        "signature_date": manifest.creation_time,
+                        "validation_status": reader.validation_status
                     }
-            except Exception:
-                # No manifest found or error reading it
-                return {"verified": False, "error": "No valid C2PA manifest found"}
+            except c2pa.Error.ManifestNotFound:
+                 return {"verified": False, "error": "No C2PA manifest found"}
+            except Exception as e:
+                # Manifest found but error reading/validating it
+                return {"verified": False, "error": f"Validation error: {str(e)}"}
                 
         except ImportError:
-            return {"verified": False, "error": "c2pa-python library not installed"}
+            return {"verified": False, "error": "c2pa-python library not installed (requires Rust/Cargo)"}
         except Exception as e:
             return {"verified": False, "error": str(e)}
             

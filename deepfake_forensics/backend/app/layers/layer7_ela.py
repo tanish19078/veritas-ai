@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import uuid
 from PIL import Image, ImageChops, ImageEnhance
 from typing import Dict, Any
 
@@ -17,14 +18,15 @@ class ELAAnalyzer:
         results = {
             "score": 0.0,
             "details": {},
-            "ela_image_path": None
+            "ela_image_path": None,
+            "anomalies": []
         }
         
         try:
             original = Image.open(image_path).convert('RGB')
             
             # 1. Resave at 95% quality
-            temp_resaved = os.path.join(output_dir, "temp_ela.jpg")
+            temp_resaved = os.path.join(output_dir, f"temp_ela_{uuid.uuid4().hex}.jpg")
             original.save(temp_resaved, 'JPEG', quality=95)
             resaved = Image.open(temp_resaved)
             
@@ -58,16 +60,22 @@ class ELAAnalyzer:
             
             np_ela = np.array(ela_image)
             avg_brightness = np.mean(np_ela)
+            brightness_std = np.std(np_ela)
             
             results["details"]["avg_ela_brightness"] = float(avg_brightness)
+            results["details"]["ela_brightness_std"] = float(brightness_std)
             
-            # Normalize to 0-1 score (Arbitrary thresholding for demo)
-            # Real images usually have low ELA response if original, high if resaved.
-            # But manipulation is about *difference* in ELA across the image.
-            # We'll return a neutral score but provide the image for "X-Ray".
-            results["score"] = 0.0 
+            # ELA is strongest as a visualization. Use a conservative weak score
+            # so it can support other signals without dominating the verdict.
+            brightness_score = min(float(avg_brightness) / 96.0, 1.0)
+            variance_score = min(float(brightness_std) / 96.0, 1.0)
+            results["score"] = round((brightness_score * 0.4) + (variance_score * 0.6), 3)
+
+            if results["score"] > 0.65:
+                results["anomalies"].append("High ELA response; inspect highlighted regions for edits")
             
         except Exception as e:
             print(f"ELA Error: {e}")
+            results["details"]["error"] = str(e)
             
         return results

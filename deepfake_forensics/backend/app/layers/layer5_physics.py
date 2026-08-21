@@ -36,7 +36,7 @@ class PhysicsAnalyzer:
         
         # Check if lighting direction is consistent across the image
         # This is a very rough heuristic. Real implementation requires 3D surface estimation.
-        direction_std = np.std(direction)
+        direction_std = float(np.std(direction))
         results["details"]["lighting_direction_std"] = direction_std
         
         # If direction varies too wildly, it might be inconsistent lighting (common in early GANs)

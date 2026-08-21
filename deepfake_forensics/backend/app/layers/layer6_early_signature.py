@@ -74,7 +74,7 @@ class EarlySignatureAnalyzer:
             
             final_score = (fft_score * 0.4) + (peak_score * 0.6)
             
-            results["score"] = round(final_score, 3)
+            results["score"] = float(round(float(final_score), 3))
             results["details"]["fft_high_freq_mean"] = float(high_freq_mean)
             results["details"]["fft_peaks"] = int(peaks)
             
