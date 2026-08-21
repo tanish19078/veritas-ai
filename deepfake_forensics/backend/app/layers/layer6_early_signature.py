@@ -83,8 +83,10 @@ class EarlySignatureAnalyzer:
             # High freq mean > 150 is suspicious (depends on log scale scaling)
             # Peaks > 50 is suspicious
             
-            fft_score = min(high_freq_mean / self.high_freq_divisor, 1.0) # 0-1
-            peak_score = min(peaks / self.peak_divisor, 1.0) # 0-1
+            # Log-magnitude values can be negative for near-flat images;
+            # clamp both sub-scores into [0, 1] so the result stays a score.
+            fft_score = float(np.clip(high_freq_mean / self.high_freq_divisor, 0.0, 1.0))
+            peak_score = float(np.clip(peaks / self.peak_divisor, 0.0, 1.0))
             
             final_score = (fft_score * 0.4) + (peak_score * 0.6)
             

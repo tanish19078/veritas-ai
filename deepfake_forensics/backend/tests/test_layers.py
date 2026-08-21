@@ -215,3 +215,18 @@ def test_layer6_thresholds_are_configurable(photo_like_image):
     result = insensitive.analyze(photo_like_image)
     assert result["score"] == 0.0
     assert baseline["score"] is not None
+
+
+def test_layer6_score_never_negative(photo_like_image, tmp_path):
+    from app.layers.layer6_early_signature import EarlySignatureAnalyzer
+    import cv2
+    import numpy as np
+
+    flat_path = str(tmp_path / "flat.png")
+    cv2.imwrite(flat_path, np.full((200, 200), 128, dtype=np.uint8))
+
+    analyzer = EarlySignatureAnalyzer()
+    for path in (photo_like_image, flat_path):
+        result = analyzer.analyze(path)
+        assert result["score"] is not None
+        assert 0.0 <= result["score"] <= 1.0
