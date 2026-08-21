@@ -8,7 +8,7 @@
 
 html,
 body {
-    background-color: #04060c;
+    background-color: #030509;
     color: #e2e8f0;
 }
 
@@ -17,7 +17,8 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Ambient background glows */
+/* ---------- Ambient backdrop ---------- */
+
 .bg-lab {
     position: fixed;
     inset: 0;
@@ -26,46 +27,107 @@ body {
     pointer-events: none;
 }
 
-.bg-lab::before,
-.bg-lab::after {
-    content: '';
+/* Fine blueprint grid */
+.bg-lab .lab-grid {
     position: absolute;
-    border-radius: 9999px;
-    filter: blur(120px);
-    opacity: 0.16;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 100%);
 }
 
-.bg-lab::before {
-    width: 560px;
-    height: 560px;
-    top: -180px;
-    left: -120px;
+.bg-lab .lab-glow-cyan,
+.bg-lab .lab-glow-violet {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(130px);
+    opacity: 0.14;
+}
+
+.bg-lab .lab-glow-cyan {
+    width: 620px;
+    height: 620px;
+    top: -220px;
+    left: -140px;
     background: radial-gradient(circle, #22d3ee, transparent 70%);
 }
 
-.bg-lab::after {
-    width: 640px;
-    height: 640px;
-    bottom: -240px;
-    right: -160px;
+.bg-lab .lab-glow-violet {
+    width: 700px;
+    height: 700px;
+    bottom: -280px;
+    right: -180px;
     background: radial-gradient(circle, #8b5cf6, transparent 70%);
 }
 
-/* Frosted panel */
+/* ---------- Surfaces ---------- */
+
 .panel {
     @apply rounded-2xl border border-white/[0.07] bg-white/[0.03] shadow-panel backdrop-blur-xl;
 }
 
 .panel-hover {
-    @apply transition-colors duration-200 hover:border-white/[0.14] hover:bg-white/[0.05];
+    @apply transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.05];
 }
 
-/* Gradient text */
 .text-brand {
     @apply bg-gradient-to-r from-cyan-300 via-indigo-300 to-fuchsia-300 bg-clip-text text-transparent;
 }
 
-/* Thin custom scrollbars */
+/* Uppercase micro label */
+.micro-label {
+    @apply font-mono text-[10px] uppercase tracking-[0.22em] text-slate-500;
+}
+
+/* ---------- Motion ---------- */
+
+@keyframes scan-sweep {
+    0% { top: -12%; opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { top: 104%; opacity: 0; }
+}
+
+.scan-sweep {
+    position: absolute;
+    left: 4%;
+    right: 4%;
+    height: 90px;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(34, 211, 238, 0.16),
+        rgba(34, 211, 238, 0.55),
+        rgba(34, 211, 238, 0.16),
+        transparent
+    );
+    border-radius: 9999px;
+    filter: blur(2px);
+    animation: scan-sweep 1.7s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+    0% { opacity: 0; transform: translateY(14px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+    animation: fade-up 0.5s ease-out both;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+.animate-pulse-dot {
+    animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+/* ---------- Scrollbars ---------- */
+
 * {
     scrollbar-width: thin;
     scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
@@ -83,16 +145,4 @@ body {
 
 *::-webkit-scrollbar-track {
     background: transparent;
-}
-
-/* Skeleton shimmer for loading states */
-.skeleton {
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.04) 25%,
-        rgba(255, 255, 255, 0.1) 50%,
-        rgba(255, 255, 255, 0.04) 75%
-    );
-    background-size: 800px 100%;
-    animation: shimmer 1.8s linear infinite;
 }
