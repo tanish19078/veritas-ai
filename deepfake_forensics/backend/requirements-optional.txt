@@ -1,0 +1,3 @@
+# Optional provenance verification support.
+# c2pa-python may require Rust/Cargo on some systems.
+c2pa-python
