@@ -71,14 +71,20 @@ const LayerRadar = ({ scores }: { scores: any }) => {
 };
 
 const PulseChart = ({ biology }: { biology?: any }) => {
-    const signalStd = biology?.details?.signal_std_dev;
-    const amplitude = typeof signalStd === 'number' ? Math.min(signalStd / 12, 0.35) : 0;
+    const rawWaveform: number[] = Array.isArray(biology?.details?.waveform)
+        ? biology.details.waveform
+        : [];
+    const points = rawWaveform.length > 1
+        ? rawWaveform
+        : Array.from({ length: 20 }, () => 0.5);
+    const pulseDetected = Boolean(biology?.details?.pulse_band?.detected);
+    const bpm = biology?.details?.pulse_band?.estimated_bpm;
     const data = {
-        labels: Array.from({ length: 20 }, (_, i) => i),
+        labels: points.map((_, i) => i),
         datasets: [{
-            label: 'Pulse Signal',
-            data: Array.from({ length: 20 }, (_, i) => 0.5 + Math.sin(i * 0.7) * amplitude),
-            borderColor: 'rgb(255, 205, 86)',
+            label: pulseDetected && bpm ? `Pulse Signal (~${bpm} BPM)` : 'Pulse Signal',
+            data: points,
+            borderColor: pulseDetected ? 'rgb(75, 192, 120)' : 'rgb(255, 205, 86)',
             tension: 0.4
         }]
     };
