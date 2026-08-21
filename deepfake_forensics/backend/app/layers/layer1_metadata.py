@@ -96,35 +96,52 @@ class MetadataAnalyzer:
 
     def _check_c2pa(self, file_path: str) -> Dict[str, Any]:
         """
-        Verifies C2PA Content Credentials.
+        Verifies C2PA Content Credentials using c2pa-python when available.
         Returns a dictionary with status and details.
         """
         try:
-            # Attempt to read C2PA manifest
             import c2pa
-
-            try:
-                # Create a reader and parse the file
-                reader = c2pa.Reader.from_file(file_path)
-                manifest = reader.active_manifest
-
-                if manifest:
-                    return {
-                        "verified": True,
-                        "issuer": manifest.claim_generator,
-                        "title": manifest.title,
-                        "signature_date": manifest.creation_time,
-                        "validation_status": reader.validation_status
-                    }
-            except c2pa.Error.ManifestNotFound:
-                 return {"verified": False, "error": "No C2PA manifest found"}
-            except Exception as e:
-                # Manifest found but error reading/validating it
-                return {"verified": False, "error": f"Validation error: {str(e)}"}
-                
         except ImportError:
-            return {"verified": False, "error": "c2pa-python library not installed (requires Rust/Cargo)"}
-        except Exception as e:
-            return {"verified": False, "error": str(e)}
-            
-        return {"verified": False, "error": "No manifest"}
+            return {
+                "verified": False,
+                "error": "c2pa-python library not installed (see requirements-optional.txt)",
+            }
+
+        try:
+            reader = c2pa.Reader(file_path)
+        except Exception as exc:
+            if "ManifestNotFound" in type(exc).__name__:
+                return {"verified": False, "error": "No C2PA manifest found"}
+            return {"verified": False, "error": f"C2PA reader error: {exc}"}
+
+        try:
+            manifest = reader.get_active_manifest() or {}
+            if not isinstance(manifest, dict):
+                manifest = {}
+
+            validation_state = None
+            try:
+                validation_state = reader.get_validation_state()
+            except Exception:
+                pass
+
+            # A manifest only proves authenticity when its signatures validate.
+            valid = True
+            try:
+                valid = bool(reader.is_valid())
+            except Exception:
+                pass
+            if validation_state is not None:
+                valid = valid and "invalid" not in str(validation_state).lower()
+
+            return {
+                "verified": bool(manifest) and valid,
+                "issuer": manifest.get("claim_generator"),
+                "title": manifest.get("title"),
+                "signature_date": manifest.get("signature", {}).get("time")
+                if isinstance(manifest.get("signature"), dict)
+                else None,
+                "validation_state": str(validation_state) if validation_state is not None else None,
+            }
+        except Exception as exc:
+            return {"verified": False, "error": f"C2PA validation error: {exc}"}

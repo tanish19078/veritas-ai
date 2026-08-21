@@ -1,8 +1,7 @@
 # Optional extras for local (non-Docker) deployments.
 
-# Provenance verification (Layer 1).
-# c2pa-python may require Rust/Cargo on some systems.
-c2pa-python
+# Provenance verification (Layer 1). Ships prebuilt wheels; no Rust needed.
+c2pa-python>=0.5.0
 
 # Pretrained AI-image detector (Layer 4). Heavy (~2 GB with torch);
 # without these the layer falls back to the deterministic heuristic.
