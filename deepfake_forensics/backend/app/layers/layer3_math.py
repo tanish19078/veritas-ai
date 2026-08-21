@@ -1,6 +1,11 @@
+import os
+
 import cv2
 import numpy as np
 from typing import Dict, Any
+
+from app.core.config import env_float
+
 
 class MathAnalyzer:
     """
@@ -9,7 +14,15 @@ class MathAnalyzer:
     - 3B. DCT (Discrete Cosine Transform)
     - 3C. CFA / Bayer Pattern Detection
     - 3D. Noise Residual Extraction (BayarConv stub)
+
+    Thresholds are configurable via environment variables:
+      L3_FFT_THRESHOLD, L3_DCT_THRESHOLD, L3_CFA_THRESHOLD (0-1 scales).
     """
+
+    def __init__(self):
+        self.fft_threshold = env_float("L3_FFT_THRESHOLD", 0.7)
+        self.dct_threshold = env_float("L3_DCT_THRESHOLD", 0.6)
+        self.cfa_threshold = env_float("L3_CFA_THRESHOLD", 0.8)
 
     def analyze(self, image_path: str) -> Dict[str, Any]:
         results = {
@@ -31,14 +44,14 @@ class MathAnalyzer:
         # 3A. FFT Analysis
         fft_score = float(self._analyze_fft(gray))
         results["details"]["fft_score"] = fft_score
-        if fft_score > 0.7:
+        if fft_score > self.fft_threshold:
             results["anomalies"].append("Strong periodic artifacts in FFT (Grid patterns)")
             score += 0.4
 
         # 3B. DCT Analysis
         dct_score = float(self._analyze_dct(gray))
         results["details"]["dct_score"] = dct_score
-        if dct_score > 0.6:
+        if dct_score > self.dct_threshold:
              results["anomalies"].append("Abnormal DCT coefficient distribution")
              score += 0.3
 
@@ -46,7 +59,7 @@ class MathAnalyzer:
         # AI images usually lack a Bayer pattern trace because they are generated directly as RGB
         cfa_score = float(self._analyze_cfa(img))
         results["details"]["cfa_absence_score"] = cfa_score
-        if cfa_score > 0.8:
+        if cfa_score > self.cfa_threshold:
             results["anomalies"].append("Missing CFA/Bayer pattern traces (Direct RGB generation)")
             score += 0.5
 

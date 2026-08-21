@@ -188,3 +188,30 @@ def test_physics_layer_runs_and_reports_details(photo_like_image):
     assert "lighting" in results["details"]
     assert "eye_glint" in results["details"]
     assert results["score"] is None or 0.0 <= results["score"] <= 1.0
+
+
+def test_layer3_thresholds_are_configurable(photo_like_image):
+    from app.layers.layer3_math import MathAnalyzer
+
+    strict = MathAnalyzer()
+    assert 0.0 < strict.cfa_threshold <= 1.0
+
+    trigger_all = MathAnalyzer()
+    trigger_all.fft_threshold = trigger_all.dct_threshold = trigger_all.cfa_threshold = -1.0
+    results = trigger_all.analyze(photo_like_image)
+    assert len(results["anomalies"]) == 3
+    assert results["score"] == 0.99
+
+
+def test_layer6_thresholds_are_configurable(photo_like_image):
+    from app.layers.layer6_early_signature import EarlySignatureAnalyzer
+
+    analyzer = EarlySignatureAnalyzer()
+    baseline = analyzer.analyze(photo_like_image)
+
+    insensitive = EarlySignatureAnalyzer()
+    insensitive.high_freq_divisor = 10**9
+    insensitive.peak_divisor = 10**9
+    result = insensitive.analyze(photo_like_image)
+    assert result["score"] == 0.0
+    assert baseline["score"] is not None

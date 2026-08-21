@@ -2,13 +2,26 @@ import cv2
 import numpy as np
 from typing import Dict, Any
 
+from app.core.config import env_float
+
+
 class EarlySignatureAnalyzer:
     """
     Layer 6: Early Direct AI Signature Detection
     - Frequency Domain Analysis (FFT) for high-frequency artifacts (star patterns)
     - Grid Artifact Detection (Periodic patterns from GANs/Diffusion upsamplers)
+
+    Calibration knobs (environment variables):
+      L6_HIGH_FREQ_DIVISOR  (default 200.0) — higher = less sensitive FFT score
+      L6_PEAK_DIVISOR       (default 100.0) — higher = less sensitive peak score
+      L6_ANOMALY_THRESHOLD  (default 0.6)   — final score above this flags an anomaly
     """
-    
+
+    def __init__(self):
+        self.high_freq_divisor = env_float("L6_HIGH_FREQ_DIVISOR", 200.0)
+        self.peak_divisor = env_float("L6_PEAK_DIVISOR", 100.0)
+        self.anomaly_threshold = env_float("L6_ANOMALY_THRESHOLD", 0.6)
+
     def analyze(self, image_path: str) -> Dict[str, Any]:
         results = {
             "score": None,
@@ -70,8 +83,8 @@ class EarlySignatureAnalyzer:
             # High freq mean > 150 is suspicious (depends on log scale scaling)
             # Peaks > 50 is suspicious
             
-            fft_score = min(high_freq_mean / 200.0, 1.0) # 0-1
-            peak_score = min(peaks / 100.0, 1.0) # 0-1
+            fft_score = min(high_freq_mean / self.high_freq_divisor, 1.0) # 0-1
+            peak_score = min(peaks / self.peak_divisor, 1.0) # 0-1
             
             final_score = (fft_score * 0.4) + (peak_score * 0.6)
             
@@ -79,7 +92,7 @@ class EarlySignatureAnalyzer:
             results["details"]["fft_high_freq_mean"] = float(high_freq_mean)
             results["details"]["fft_peaks"] = int(peaks)
             
-            if final_score > 0.6:
+            if final_score > self.anomaly_threshold:
                 results["anomalies"].append("High-frequency periodic artifacts detected (Grid/Checkerboard)")
             
         except Exception as e:

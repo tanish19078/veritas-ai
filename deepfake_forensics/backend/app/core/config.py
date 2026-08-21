@@ -1,5 +1,14 @@
 import os
 
+
+def env_float(name: str, default: float) -> float:
+    """Reads a float from the environment, falling back to `default`."""
+    try:
+        return float(os.getenv(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
 class Settings:
     PROJECT_NAME: str = "Universal Deepfake Forensics System"
     API_V1_STR: str = "/api/v1"
