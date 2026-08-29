@@ -1,9 +1,10 @@
+import React from 'react';
 import { useCountUp } from '../../hooks/useCountUp';
 
-const START_ANGLE = 150; // degrees; 240-degree sweep
-const SWEEP = 240;
-const RADIUS = 62;
-const CENTER = 80;
+const START_ANGLE = 145; // degrees; 250-degree sweep
+const SWEEP = 250;
+const RADIUS = 64;
+const CENTER = 82;
 
 function polar(angleDeg: number, radius: number): [number, number] {
     const rad = (angleDeg * Math.PI) / 180;
@@ -23,21 +24,29 @@ interface ArcGaugeProps {
     label?: string;
 }
 
-const ArcGauge = ({ value, stroke, label = 'fake prob.' }: ArcGaugeProps) => {
-    const animated = useCountUp(value);
+export default function ArcGauge({ value, stroke, label = 'Fake Probability' }: ArcGaugeProps) {
+    const animated = useCountUp(value, 1000);
     const clamped = Math.max(0, Math.min(1, animated));
     const needleAngle = START_ANGLE + SWEEP * clamped;
 
-    const ticks = Array.from({ length: 13 }, (_, i) => START_ANGLE + (SWEEP / 12) * i);
+    const ticks = Array.from({ length: 15 }, (_, i) => START_ANGLE + (SWEEP / 14) * i);
 
     return (
-        <div className="relative h-44 w-44 shrink-0">
-            <svg viewBox="0 0 160 160" className="h-full w-full">
-                {/* tick marks */}
+        <div className="relative h-48 w-48 shrink-0 flex items-center justify-center">
+            <svg viewBox="0 0 164 164" className="h-full w-full">
+                {/* Radial background glow */}
+                <circle
+                    cx={CENTER}
+                    cy={CENTER}
+                    r={RADIUS + 6}
+                    fill="transparent"
+                />
+
+                {/* Tick marks */}
                 {ticks.map((angle, i) => {
-                    const major = i % 3 === 0;
+                    const major = i % 2 === 0;
                     const [x1, y1] = polar(angle, RADIUS + 8);
-                    const [x2, y2] = polar(angle, RADIUS + (major ? 16 : 12));
+                    const [x2, y2] = polar(angle, RADIUS + (major ? 15 : 11));
                     const lit = angle <= needleAngle;
                     return (
                         <line
@@ -46,61 +55,70 @@ const ArcGauge = ({ value, stroke, label = 'fake prob.' }: ArcGaugeProps) => {
                             y1={y1}
                             x2={x2}
                             y2={y2}
-                            stroke={lit ? stroke : 'rgba(148,163,184,0.25)'}
+                            stroke={lit ? stroke : '#cbd5e1'}
                             strokeWidth={major ? 2 : 1}
                             strokeLinecap="round"
-                            opacity={lit ? 0.9 : 0.6}
+                            opacity={lit ? 0.95 : 0.6}
                         />
                     );
                 })}
 
-                {/* track */}
+                {/* Outer track */}
                 <path
                     d={arcPath(START_ANGLE, START_ANGLE + SWEEP, RADIUS)}
                     fill="none"
-                    stroke="rgba(148,163,184,0.14)"
+                    stroke="#e2e8f0"
                     strokeWidth="9"
                     strokeLinecap="round"
                 />
 
                 <defs>
-                    <linearGradient id={`arcGrad-${stroke.replace('#', '')}`} x1="0%" y1="100%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor={stroke} stopOpacity="0.55" />
+                    <linearGradient
+                        id={`gaugeGrad-${stroke.replace(/[^a-zA-Z0-9]/g, '')}`}
+                        x1="0%"
+                        y1="100%"
+                        x2="100%"
+                        y2="0%"
+                    >
+                        <stop offset="0%" stopColor={stroke} stopOpacity="0.6" />
                         <stop offset="100%" stopColor={stroke} />
                     </linearGradient>
                 </defs>
 
-                {/* progress arc */}
+                {/* Progress arc */}
                 {clamped > 0.005 && (
                     <path
                         d={arcPath(START_ANGLE, needleAngle, RADIUS)}
                         fill="none"
-                        stroke={`url(#arcGrad-${stroke.replace('#', '')})`}
+                        stroke={`url(#gaugeGrad-${stroke.replace(/[^a-zA-Z0-9]/g, '')})`}
                         strokeWidth="9"
                         strokeLinecap="round"
+                        className="transition-all duration-75"
                     />
                 )}
 
-                {/* needle dot */}
+                {/* Needle Indicator */}
                 <circle
                     cx={polar(needleAngle, RADIUS)[0]}
                     cy={polar(needleAngle, RADIUS)[1]}
                     r="4.5"
                     fill={stroke}
-                    stroke="#030509"
+                    stroke="#ffffff"
                     strokeWidth="2"
+                    className="shadow-md"
                 />
             </svg>
 
-            <div className="absolute inset-0 flex flex-col items-center justify-center pt-3">
-                <span className="font-mono text-3xl font-semibold tabular-nums text-slate-50">
+            {/* Inner Metrics Display */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pt-3 text-center pointer-events-none">
+                <span className="font-mono text-3xl font-extrabold tabular-nums text-slate-900 leading-none">
                     {(clamped * 100).toFixed(0)}
-                    <span className="text-base text-slate-500">%</span>
+                    <span className="text-lg font-semibold text-slate-400 ml-0.5">%</span>
                 </span>
-                <span className="micro-label mt-1">{label}</span>
+                <span className="micro-label mt-1.5 !text-slate-500 font-medium">
+                    {label}
+                </span>
             </div>
         </div>
     );
-};
-
-export default ArcGauge;
+}
