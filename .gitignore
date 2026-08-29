@@ -44,3 +44,4 @@ backend/uploads/
 uploads/
 *.db
 *.sqlite3
+*.pid

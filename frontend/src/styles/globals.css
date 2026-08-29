@@ -3,21 +3,18 @@
 @tailwind utilities;
 
 :root {
-    color-scheme: dark;
+    color-scheme: light;
 }
 
 html,
 body {
-    background-color: #030509;
-    color: #e2e8f0;
-}
-
-body {
+    background-color: #f8fafc;
+    color: #0f172a;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
     -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- Ambient backdrop ---------- */
+/* ---------- Ambient Light Lab Backdrop ---------- */
 
 .bg-lab {
     position: fixed;
@@ -25,112 +22,92 @@ body {
     z-index: -1;
     overflow: hidden;
     pointer-events: none;
+    background: radial-gradient(circle at 50% 0%, #f1f5f9 0%, #f8fafc 100%);
 }
 
-/* Fine blueprint grid */
+/* Fine forensic grid */
 .bg-lab .lab-grid {
     position: absolute;
     inset: 0;
     background-image:
-        linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
-    background-size: 44px 44px;
-    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 100%);
+        linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 50%, transparent 100%);
 }
 
 .bg-lab .lab-glow-cyan,
-.bg-lab .lab-glow-violet {
+.bg-lab .lab-glow-violet,
+.bg-lab .lab-glow-emerald {
     position: absolute;
     border-radius: 9999px;
-    filter: blur(130px);
-    opacity: 0.14;
+    filter: blur(120px);
+    opacity: 0.25;
 }
 
 .bg-lab .lab-glow-cyan {
-    width: 620px;
-    height: 620px;
-    top: -220px;
-    left: -140px;
-    background: radial-gradient(circle, #22d3ee, transparent 70%);
+    width: 550px;
+    height: 550px;
+    top: -180px;
+    left: -100px;
+    background: radial-gradient(circle, #38bdf8, transparent 70%);
 }
 
 .bg-lab .lab-glow-violet {
-    width: 700px;
-    height: 700px;
-    bottom: -280px;
-    right: -180px;
-    background: radial-gradient(circle, #8b5cf6, transparent 70%);
+    width: 600px;
+    height: 600px;
+    top: 15%;
+    right: -150px;
+    background: radial-gradient(circle, #c084fc, transparent 70%);
 }
 
-/* ---------- Surfaces ---------- */
+.bg-lab .lab-glow-emerald {
+    width: 500px;
+    height: 500px;
+    bottom: -150px;
+    left: 20%;
+    background: radial-gradient(circle, #34d399, transparent 70%);
+}
+
+/* ---------- Forensic Surfaces & Panels ---------- */
 
 .panel {
-    @apply rounded-2xl border border-white/[0.07] bg-white/[0.03] shadow-panel backdrop-blur-xl;
+    @apply rounded-2xl border border-slate-200/90 bg-white shadow-card transition-all;
 }
 
-.panel-hover {
-    @apply transition-all duration-200 hover:border-white/[0.15] hover:bg-white/[0.05];
+.panel-interactive {
+    @apply hover:border-slate-300 hover:shadow-glass;
+}
+
+.panel-glass {
+    @apply rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-md shadow-card;
 }
 
 .text-brand {
-    @apply bg-gradient-to-r from-cyan-300 via-indigo-300 to-fuchsia-300 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent;
 }
 
-/* Uppercase micro label */
+/* Uppercase forensic telemetry label */
 .micro-label {
-    @apply font-mono text-[10px] uppercase tracking-[0.22em] text-slate-500;
+    @apply font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold;
 }
 
-/* ---------- Motion ---------- */
-
-@keyframes scan-sweep {
-    0% { top: -12%; opacity: 0; }
-    12% { opacity: 1; }
-    88% { opacity: 1; }
-    100% { top: 104%; opacity: 0; }
-}
-
-.scan-sweep {
+/* Laser scan line */
+.scan-laser {
     position: absolute;
-    left: 4%;
-    right: 4%;
-    height: 90px;
-    background: linear-gradient(
-        to bottom,
-        transparent,
-        rgba(34, 211, 238, 0.16),
-        rgba(34, 211, 238, 0.55),
-        rgba(34, 211, 238, 0.16),
-        transparent
-    );
-    border-radius: 9999px;
-    filter: blur(2px);
-    animation: scan-sweep 1.7s ease-in-out infinite;
-}
-
-@keyframes fade-up {
-    0% { opacity: 0; transform: translateY(14px); }
-    100% { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-up {
-    animation: fade-up 0.5s ease-out both;
-}
-
-@keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.45; transform: scale(0.82); }
-}
-
-.animate-pulse-dot {
-    animation: pulse-dot 1.6s ease-in-out infinite;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, #0284c7 30%, #38bdf8 50%, #0284c7 70%, transparent 100%);
+    box-shadow: 0 0 14px 2px rgba(2, 132, 199, 0.6);
+    animation: scan-laser 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* ---------- Scrollbars ---------- */
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+    scrollbar-color: #cbd5e1 transparent;
 }
 
 *::-webkit-scrollbar {
@@ -139,10 +116,32 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.25);
+    background: #cbd5e1;
     border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 *::-webkit-scrollbar-track {
     background: transparent;
+}
+
+/* ---------- Print Mode (Forensic Dossier) ---------- */
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .panel {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+    }
 }
