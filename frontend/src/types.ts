@@ -1,5 +1,6 @@
 export type Verdict =
     | 'Real'
+    | 'Authentic'
     | 'Suspicious / Inconclusive'
     | 'AI-Generated'
     | 'Inconclusive'
@@ -13,6 +14,7 @@ export interface LayerScores {
     physics?: number;
     early_signature?: number;
     ela?: number;
+    [key: string]: number | undefined;
 }
 
 export interface PulseBandInfo {
@@ -30,6 +32,83 @@ export interface BiologyDetails {
     pulse_band?: PulseBandInfo;
     waveform?: number[];
     note?: string;
+    anomalies?: string[];
+    [key: string]: unknown;
+}
+
+export interface MathDetails {
+    fft_score?: number;
+    dct_score?: number;
+    cfa_absence_score?: number;
+    noise_variance?: number;
+    anomalies?: string[];
+    note?: string;
+    [key: string]: unknown;
+}
+
+export interface AIModelDetails {
+    method?: 'pretrained' | 'heuristic' | string;
+    model_name?: string;
+    blur_score?: number;
+    entropy_score?: number;
+    color_anomaly_score?: number;
+    score?: number | null;
+    anomalies?: string[];
+    [key: string]: unknown;
+}
+
+export interface PhysicsDetails {
+    lighting?: {
+        direction_variance?: number;
+        score?: number | null;
+        quadrants?: {
+            top_left?: number;
+            top_right?: number;
+            bottom_left?: number;
+            bottom_right?: number;
+        };
+    };
+    eye_glint?: {
+        checked?: boolean;
+        symmetry_error?: number;
+        score?: number | null;
+        left_glint?: [number, number];
+        right_glint?: [number, number];
+    };
+    anomalies?: string[];
+    [key: string]: unknown;
+}
+
+export interface EarlySignatureDetails {
+    fft_peaks?: number;
+    fft_high_freq_mean?: number;
+    spectral_energy_ratio?: number;
+    anomalies?: string[];
+    [key: string]: unknown;
+}
+
+export interface ElaDetails {
+    score?: number | null;
+    avg_ela_brightness?: number;
+    ela_brightness_std?: number;
+    anomalies?: string[];
+    details?: Record<string, unknown>;
+    [key: string]: unknown;
+}
+
+export interface MetadataDetails {
+    mime_type?: string;
+    exif_count?: number;
+    camera_make?: string;
+    camera_model?: string;
+    software?: string;
+    iso?: string | number;
+    focal_length?: string;
+    tamper_flags?: string[];
+    anomalies?: string[];
+    provenance_verified?: boolean;
+    c2pa?: C2paData;
+    [key: string]: unknown;
 }
 
 export interface C2paData {
@@ -38,20 +117,20 @@ export interface C2paData {
     title?: string | null;
     signature_date?: string | null;
     validation_state?: string | null;
+    cert_serial?: string | null;
+    algorithm?: string | null;
+    claim_generator?: string | null;
     error?: string;
 }
 
 export interface AnalysisDetails {
-    metadata?: Record<string, unknown>;
+    metadata?: MetadataDetails;
     biology?: BiologyDetails;
-    math?: Record<string, unknown>;
-    ai_model?: Record<string, unknown>;
-    physics?: {
-        lighting?: { direction_variance?: number; score?: number | null };
-        eye_glint?: { checked?: boolean; symmetry_error?: number; score?: number | null };
-    };
-    early_signature?: { fft_peaks?: number; fft_high_freq_mean?: number };
-    ela?: { avg_ela_brightness?: number; ela_brightness_std?: number };
+    math?: MathDetails;
+    ai_model?: AIModelDetails;
+    physics?: PhysicsDetails;
+    early_signature?: EarlySignatureDetails;
+    ela?: ElaDetails;
     [key: string]: unknown;
 }
 
@@ -68,6 +147,9 @@ export interface AnalysisResult {
     stored_file?: string;
     media_type?: 'image' | 'video';
     previewUrl?: string;
+    file_size_bytes?: number;
+    sha256_hash?: string;
+    timestamp?: string;
 }
 
 export interface HistoryRecord {
@@ -77,4 +159,17 @@ export interface HistoryRecord {
     verdict?: string;
     confidence?: number;
     timestamp?: string;
+    layer_scores?: LayerScores;
+}
+
+export interface SampleScenario {
+    id: string;
+    title: string;
+    subtitle: string;
+    badge: string;
+    badgeColor: string;
+    mediaType: 'image' | 'video';
+    previewUrl: string;
+    elaUrl?: string;
+    result: AnalysisResult;
 }
